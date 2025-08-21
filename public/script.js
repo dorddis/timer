@@ -20,6 +20,7 @@ class MinimalisticTimer {
         this.interval = null;
         this.startTime = null;
         this.currentTaskName = '';
+        this.actualElapsedSeconds = 0;
         
         this.isDragging = false;
         this.dragStartY = 0;
@@ -79,6 +80,7 @@ class MinimalisticTimer {
         
         this.totalSeconds = Math.max(0, Math.min(5999, this.dragStartTime + timeChange));
         this.remainingSeconds = this.totalSeconds;
+        this.actualElapsedSeconds = 0;
         this.updateDisplay();
         this.updateStatus();
     }
@@ -103,6 +105,7 @@ class MinimalisticTimer {
         this.totalSeconds = Math.max(0, Math.min(5999, this.totalSeconds + delta * 15));
         
         this.remainingSeconds = this.totalSeconds;
+        this.actualElapsedSeconds = 0;
         this.updateDisplay();
         this.updateStatus();
         this.saveState();
@@ -115,12 +118,18 @@ class MinimalisticTimer {
             return;
         }
         
+        // Don't hijack scroll if we're over the sidebar
+        if (this.sidebar.contains(e.target)) {
+            return;
+        }
+        
         if (e.target !== this.timerDisplay && !this.timerDisplay.contains(e.target)) {
             e.preventDefault();
             const delta = e.deltaY > 0 ? -1 : 1;
             
             this.totalSeconds = Math.max(0, Math.min(5999, this.totalSeconds + delta * 15));
             this.remainingSeconds = this.totalSeconds;
+            this.actualElapsedSeconds = 0;
             this.updateDisplay();
             this.updateStatus();
             this.saveState();
@@ -140,7 +149,8 @@ class MinimalisticTimer {
     }
     
     handleKeydown(e) {
-        if (document.activeElement === this.taskInput) {
+        if (document.activeElement === this.taskInput || 
+            document.activeElement.classList.contains('task-edit-input')) {
             return;
         }
         
@@ -167,6 +177,7 @@ class MinimalisticTimer {
                 if (!this.isRunning) {
                     this.totalSeconds = Math.min(5999, this.totalSeconds + (e.shiftKey ? 60 : 1));
                     this.remainingSeconds = this.totalSeconds;
+                    this.actualElapsedSeconds = 0;
                     this.updateDisplay();
                     this.updateStatus();
                     this.saveState();
@@ -176,6 +187,7 @@ class MinimalisticTimer {
                 if (!this.isRunning) {
                     this.totalSeconds = Math.max(0, this.totalSeconds - (e.shiftKey ? 60 : 1));
                     this.remainingSeconds = this.totalSeconds;
+                    this.actualElapsedSeconds = 0;
                     this.updateDisplay();
                     this.updateStatus();
                     this.saveState();
@@ -188,6 +200,7 @@ class MinimalisticTimer {
                     e.stopPropagation();
                     this.totalSeconds = Math.min(5999, this.totalSeconds + 15);
                     this.remainingSeconds = this.totalSeconds;
+                    this.actualElapsedSeconds = 0;
                     this.updateDisplay();
                     this.updateStatus();
                     this.saveState();
@@ -200,6 +213,7 @@ class MinimalisticTimer {
                     e.stopPropagation();
                     this.totalSeconds = Math.max(0, this.totalSeconds - 15);
                     this.remainingSeconds = this.totalSeconds;
+                    this.actualElapsedSeconds = 0;
                     this.updateDisplay();
                     this.updateStatus();
                     this.saveState();
@@ -214,16 +228,19 @@ class MinimalisticTimer {
         this.isRunning = true;
         this.isPaused = false;
         this.startTime = Date.now();
+        this.actualElapsedSeconds = this.totalSeconds - this.remainingSeconds;
         this.currentTaskName = this.taskInput.value.trim() || 'Untitled Task';
         this.timerDisplay.classList.add('running');
         this.timerDisplay.classList.remove('finished');
         
         this.interval = setInterval(() => {
             this.remainingSeconds--;
+            this.actualElapsedSeconds++;
             this.updateDisplay();
             
-            if (this.remainingSeconds <= 0) {
-                this.finish();
+            if (this.remainingSeconds === 0) {
+                this.playAlarm();
+                this.timerDisplay.classList.add('finished');
             }
             
             this.saveState();
@@ -252,6 +269,7 @@ class MinimalisticTimer {
         this.isPaused = false;
         this.totalSeconds = 0;
         this.remainingSeconds = 0;
+        this.actualElapsedSeconds = 0;
         this.timerDisplay.classList.remove('running', 'finished', 'completed');
         
         if (this.interval) {
@@ -264,26 +282,6 @@ class MinimalisticTimer {
         this.saveState();
     }
     
-    finish() {
-        this.isRunning = false;
-        this.isPaused = false;
-        this.timerDisplay.classList.remove('running');
-        this.timerDisplay.classList.add('finished');
-        
-        if (this.interval) {
-            clearInterval(this.interval);
-            this.interval = null;
-        }
-        
-        this.addCompletedTask();
-        this.playAlarm();
-        this.updateStatus();
-        this.saveState();
-        
-        setTimeout(() => {
-            this.reset();
-        }, 5000);
-    }
     
     completeTask() {
         if (!this.isRunning) return;
@@ -351,34 +349,32 @@ class MinimalisticTimer {
     }
     
     updateDisplay() {
-        const minutes = Math.floor(this.remainingSeconds / 60);
-        const seconds = this.remainingSeconds % 60;
-        this.timeDigits.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if (this.remainingSeconds >= 0) {
+            const minutes = Math.floor(this.remainingSeconds / 60);
+            const seconds = this.remainingSeconds % 60;
+            this.timeDigits.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            const overtimeSeconds = Math.abs(this.remainingSeconds);
+            const minutes = Math.floor(overtimeSeconds / 60);
+            const seconds = overtimeSeconds % 60;
+            this.timeDigits.textContent = `-${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
     }
     
     updateStatus() {
         if (this.totalSeconds === 0) {
             this.timerStatus.textContent = 'Click and drag to set time';
+        } else if (this.isRunning && this.remainingSeconds < 0) {
+            this.timerStatus.textContent = 'Overtime - Press C to complete';
         } else if (this.isRunning) {
             this.timerStatus.textContent = 'Running... Click to pause';
         } else if (this.isPaused) {
             this.timerStatus.textContent = 'Paused - Click to resume';
-        } else if (this.remainingSeconds === 0 && this.totalSeconds > 0) {
-            this.timerStatus.textContent = 'Time up!';
+        } else if (this.remainingSeconds <= 0 && this.totalSeconds > 0) {
+            this.timerStatus.textContent = 'Time up! Press C to complete';
         } else {
             this.timerStatus.textContent = 'Click to start timer';
         }
-    }
-    
-    saveState() {
-        const state = {
-            totalSeconds: this.totalSeconds,
-            remainingSeconds: this.remainingSeconds,
-            isRunning: this.isRunning,
-            isPaused: this.isPaused,
-            timestamp: Date.now()
-        };
-        localStorage.setItem('timerState', JSON.stringify(state));
     }
     
     loadState() {
@@ -396,15 +392,14 @@ class MinimalisticTimer {
                 this.taskInput.value = state.currentTaskName;
             }
             
-            if (state.isRunning && timePassed < state.remainingSeconds) {
-                this.remainingSeconds = Math.max(0, state.remainingSeconds - timePassed);
+            if (state.isRunning) {
+                this.remainingSeconds = state.remainingSeconds - timePassed;
+                this.actualElapsedSeconds = state.actualElapsedSeconds || (this.totalSeconds - this.remainingSeconds);
                 this.start();
-            } else if (state.isRunning && timePassed >= state.remainingSeconds) {
-                this.remainingSeconds = 0;
-                this.finish();
             } else {
                 this.isRunning = false;
                 this.isPaused = state.isPaused;
+                this.actualElapsedSeconds = state.actualElapsedSeconds || 0;
             }
             
             this.updateDisplay();
@@ -447,9 +442,15 @@ class MinimalisticTimer {
     addCompletedTask() {
         if (!this.currentTaskName) return;
         
+        const allocatedTime = this.formatDuration(this.totalSeconds);
+        const actualTime = this.formatDuration(this.actualElapsedSeconds);
+        const isOvertime = this.actualElapsedSeconds > this.totalSeconds;
+        
         const task = {
             name: this.currentTaskName,
-            duration: this.formatDuration(this.totalSeconds),
+            duration: isOvertime ? `${allocatedTime} - ${actualTime}` : allocatedTime,
+            allocatedSeconds: this.totalSeconds,
+            actualSeconds: this.actualElapsedSeconds,
             completedAt: new Date().toLocaleString(),
             timestamp: Date.now()
         };
@@ -483,8 +484,8 @@ class MinimalisticTimer {
             <div class="task-item">
                 <div class="task-content">
                     <div class="task-name">
-                        ${this.escapeHtml(task.name)}
-                        <button class="task-delete" onclick="timer.deleteTask(${index})" title="Delete task">
+                        <span class="task-text" data-task-index="${index}">${this.escapeHtml(task.name)}</span>
+                        <button class="task-delete" data-task-index="${index}" title="Delete task">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z"/>
                             </svg>
@@ -497,8 +498,97 @@ class MinimalisticTimer {
                 </div>
             </div>
         `).join('');
+        
+        // Add event listeners to delete buttons
+        const deleteButtons = this.tasksList.querySelectorAll('.task-delete');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const taskIndex = parseInt(e.currentTarget.getAttribute('data-task-index'));
+                this.deleteTask(taskIndex);
+            });
+        });
+        
+        // Add event listeners to task text elements for editing
+        const taskTexts = this.tasksList.querySelectorAll('.task-text');
+        taskTexts.forEach(textElement => {
+            textElement.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const taskIndex = parseInt(e.currentTarget.getAttribute('data-task-index'));
+                this.editTaskName(textElement, taskIndex);
+            });
+        });
     }
     
+    editTaskName(textElement, taskIndex) {
+        if (textElement.classList.contains('editing')) {
+            return;
+        }
+        
+        const currentText = textElement.textContent;
+        textElement.classList.add('editing');
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentText;
+        input.className = 'task-edit-input';
+        input.style.cssText = `
+            background: rgba(35, 35, 35, 0.9);
+            border: 1px solid rgba(232, 232, 232, 0.3);
+            border-radius: 4px;
+            color: #e8e8e8;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            width: 100%;
+            outline: none;
+            user-select: text;
+        `;
+        
+        textElement.style.display = 'none';
+        textElement.parentNode.insertBefore(input, textElement);
+        input.focus();
+        input.select();
+        
+        const saveEdit = () => {
+            const newText = input.value.trim();
+            if (newText && newText !== currentText) {
+                this.updateTaskName(taskIndex, newText);
+            }
+            input.remove();
+            textElement.style.display = '';
+            textElement.classList.remove('editing');
+        };
+        
+        const cancelEdit = () => {
+            input.remove();
+            textElement.style.display = '';
+            textElement.classList.remove('editing');
+        };
+        
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveEdit();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEdit();
+            }
+        });
+    }
+    
+    updateTaskName(taskIndex, newName) {
+        let tasks = this.getTaskHistory();
+        if (tasks[taskIndex]) {
+            tasks[taskIndex].name = newName;
+            localStorage.setItem('taskHistory', JSON.stringify(tasks));
+            this.loadTaskHistory();
+        }
+    }
+
     deleteTask(index) {
         let tasks = this.getTaskHistory();
         tasks.splice(index, 1);
@@ -530,6 +620,7 @@ class MinimalisticTimer {
             isRunning: this.isRunning,
             isPaused: this.isPaused,
             currentTaskName: this.taskInput.value,
+            actualElapsedSeconds: this.actualElapsedSeconds,
             timestamp: Date.now()
         };
         localStorage.setItem('timerState', JSON.stringify(state));
