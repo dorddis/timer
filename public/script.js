@@ -479,17 +479,33 @@ class MinimalisticTimer {
             return;
         }
         
-        this.tasksList.innerHTML = tasks.map(task => `
+        this.tasksList.innerHTML = tasks.map((task, index) => `
             <div class="task-item">
-                <div class="task-name">${this.escapeHtml(task.name)}</div>
-                <div class="task-details">
-                    <span class="task-duration">${task.duration}</span>
-                    <span class="task-time">${task.completedAt}</span>
+                <div class="task-content">
+                    <div class="task-name">
+                        ${this.escapeHtml(task.name)}
+                        <button class="task-delete" onclick="timer.deleteTask(${index})" title="Delete task">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="task-details">
+                        <span class="task-duration">${task.duration}</span>
+                        <span class="task-time">${task.completedAt}</span>
+                    </div>
                 </div>
             </div>
         `).join('');
     }
     
+    deleteTask(index) {
+        let tasks = this.getTaskHistory();
+        tasks.splice(index, 1);
+        localStorage.setItem('taskHistory', JSON.stringify(tasks));
+        this.loadTaskHistory();
+    }
+
     clearTaskHistory() {
         localStorage.removeItem('taskHistory');
         this.loadTaskHistory();
@@ -616,5 +632,5 @@ class MinimalisticTimer {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new MinimalisticTimer();
+    window.timer = new MinimalisticTimer();
 });
