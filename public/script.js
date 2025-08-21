@@ -25,6 +25,7 @@ class MinimalisticTimer {
         this.isDragging = false;
         this.dragStartY = 0;
         this.dragStartTime = 0;
+        this.hasDragged = false;
         this.sidebarOpen = false;
         this.alarmPlaying = false;
         
@@ -65,6 +66,7 @@ class MinimalisticTimer {
         if (this.isRunning) return;
         
         this.isDragging = true;
+        this.hasDragged = false;
         this.dragStartY = e.clientY;
         this.dragStartTime = this.totalSeconds;
         this.timerDisplay.classList.add('dragging');
@@ -77,6 +79,11 @@ class MinimalisticTimer {
         const deltaY = this.dragStartY - e.clientY;
         const sensitivity = 2;
         const timeChange = Math.round(deltaY * sensitivity);
+        
+        // Only mark as dragged if there's actual movement
+        if (Math.abs(deltaY) > 3) {
+            this.hasDragged = true;
+        }
         
         this.totalSeconds = Math.max(0, Math.min(5999, this.dragStartTime + timeChange));
         this.remainingSeconds = this.totalSeconds;
@@ -137,7 +144,11 @@ class MinimalisticTimer {
     }
     
     handleClick(e) {
-        if (this.isDragging) return;
+        // Don't trigger click if we just finished dragging
+        if (this.hasDragged) {
+            this.hasDragged = false;
+            return;
+        }
         
         if (this.totalSeconds === 0) return;
         
@@ -231,12 +242,16 @@ class MinimalisticTimer {
         this.actualElapsedSeconds = this.totalSeconds - this.remainingSeconds;
         this.currentTaskName = this.taskInput.value.trim() || 'Untitled Task';
         this.timerDisplay.classList.add('running');
-        this.timerDisplay.classList.remove('finished');
+        // Only remove 'finished' if we're not in overtime (remainingSeconds >= 0)
+        if (this.remainingSeconds >= 0) {
+            this.timerDisplay.classList.remove('finished');
+        }
         
         this.interval = setInterval(() => {
             this.remainingSeconds--;
             this.actualElapsedSeconds++;
             this.updateDisplay();
+            this.updateStatus();
             
             if (this.remainingSeconds === 0) {
                 this.playAlarm();
@@ -365,13 +380,13 @@ class MinimalisticTimer {
         if (this.totalSeconds === 0) {
             this.timerStatus.textContent = 'Click and drag to set time';
         } else if (this.isRunning && this.remainingSeconds < 0) {
-            this.timerStatus.textContent = 'Overtime - Press C to complete';
+            this.timerStatus.textContent = 'Overtime - C to complete';
         } else if (this.isRunning) {
             this.timerStatus.textContent = 'Running... Click to pause';
         } else if (this.isPaused) {
             this.timerStatus.textContent = 'Paused - Click to resume';
         } else if (this.remainingSeconds <= 0 && this.totalSeconds > 0) {
-            this.timerStatus.textContent = 'Time up! Press C to complete';
+            this.timerStatus.textContent = 'Time up! C to complete';
         } else {
             this.timerStatus.textContent = 'Click to start timer';
         }
