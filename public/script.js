@@ -40,6 +40,8 @@ class MinimalisticTimer {
         this.globalWheelTimeout = null;
         this.todos = [];
         this.todoIdCounter = 1;
+        this.currentInstructionText = '';
+        this.animationTimeout = null;
         
         this.init();
         this.loadState();
@@ -892,7 +894,9 @@ class MinimalisticTimer {
         if (e.target.classList.contains('todo-delete')) {
             e.stopPropagation();
             this.deleteTodo(todoId);
-        } else if (e.target.classList.contains('todo-text')) {
+        } else {
+            // Make entire todo item clickable (not just todo-text)
+            e.stopPropagation(); // Prevent outside click handler
             this.startTodoAsCurrentTask(todoId);
         }
     }
@@ -903,19 +907,64 @@ class MinimalisticTimer {
         this.saveTodos();
     }
     
+    deleteTodoSilent(id) {
+        // Delete todo without updating instructions (for celebration)
+        this.todos = this.todos.filter(todo => todo.id !== id);
+        this.renderTodosWithoutInstructions();
+        this.saveTodos();
+    }
+    
     startTodoAsCurrentTask(id) {
         const todo = this.todos.find(t => t.id === id);
         if (todo) {
+            const isLastTask = this.todos.length === 1;
+            // console.log('Starting task:', todo.text, 'isLastTask:', isLastTask, 'windowOpen:', this.todoWindowOpen);
+            
             this.taskInput.value = todo.text;
             this.currentTaskName = todo.text;
-            this.deleteTodo(id);
-            if (this.todoWindowOpen) {
-                this.closeTodoWindow();
+            
+            if (isLastTask && this.todoWindowOpen) {
+                // console.log('Celebrating last task!');
+                // Keep window open for celebration - delete todo without updating instructions
+                this.deleteTodoSilent(id);
+                this.showCelebratory();
+                setTimeout(() => {
+                    // console.log('Closing window after celebration');
+                    this.closeTodoWindow();
+                }, 6000); // 6 seconds: 1s animation + 5s reading time
+            } else {
+                // console.log('Normal task completion');
+                // Normal case: delete and close
+                this.deleteTodo(id);
+                if (this.todoWindowOpen) {
+                    this.closeTodoWindow();
+                }
             }
         }
     }
     
+    showCelebratory() {
+        const instructionSpan = this.todoInstruction.querySelector('span');
+        
+        // Clear any existing animation and prevent further updates
+        if (this.animationTimeout) {
+            clearTimeout(this.animationTimeout);
+            this.animationTimeout = null;
+        }
+        
+        // Update our tracking to prevent interference
+        this.currentInstructionText = 'Woohoo! All planned tasks started!';
+        
+        // Show celebration message and keep it until window closes
+        this.animateText(instructionSpan, 'Woohoo! All planned tasks started!', 50);
+    }
+    
     renderTodos() {
+        this.renderTodosWithoutInstructions();
+        this.updateInstructionText();
+    }
+    
+    renderTodosWithoutInstructions() {
         if (this.todos.length === 0) {
             this.todoList.innerHTML = '<div class="no-todos">No tasks yet</div>';
         } else {
@@ -930,17 +979,53 @@ class MinimalisticTimer {
                 </div>
             `).join('');
         }
-        
-        this.updateInstructionText();
     }
     
-    updateInstructionText() {
+    updateInstructionText(forceAnimate = false) {
         const instructionSpan = this.todoInstruction.querySelector('span');
-        if (this.todos.length === 0) {
-            instructionSpan.textContent = 'Press enter to save task';
-        } else {
-            instructionSpan.textContent = 'Tap on task to start';
+        const newText = this.todos.length === 0 ? 'Press enter to save task' : 'Tap on task to start';
+        
+        // Only animate if text is actually changing or forced
+        if (this.currentInstructionText !== newText || forceAnimate) {
+            this.currentInstructionText = newText;
+            
+            // Clear any existing animation timeout
+            if (this.animationTimeout) {
+                clearTimeout(this.animationTimeout);
+                this.animationTimeout = null;
+            }
+            
+            this.animateText(instructionSpan, newText);
         }
+    }
+    
+    animateText(element, newText, speed = 40) {
+        // Clear any existing timeout first
+        if (this.animationTimeout) {
+            clearTimeout(this.animationTimeout);
+        }
+        
+        element.style.opacity = '0.6';
+        
+        // Simple fade out, change text, fade in
+        setTimeout(() => {
+            element.textContent = '';
+            
+            // Type out new text
+            let i = 0;
+            const typeChar = () => {
+                if (i < newText.length) {
+                    element.textContent += newText.charAt(i);
+                    i++;
+                    this.animationTimeout = setTimeout(typeChar, speed);
+                } else {
+                    element.style.opacity = '1';
+                    this.animationTimeout = null;
+                }
+            };
+            
+            typeChar();
+        }, 200);
     }
     
     escapeHtml(text) {
@@ -959,10 +1044,18 @@ class MinimalisticTimer {
                 }
             }
             this.renderTodos();
+            // Initialize instruction text without animation on first load
+            const instructionSpan = this.todoInstruction.querySelector('span');
+            this.currentInstructionText = this.todos.length === 0 ? 'Press enter to save task' : 'Tap on task to start';
+            instructionSpan.textContent = this.currentInstructionText;
         } catch (error) {
             console.log('Could not load todos from localStorage');
             this.todos = [];
             this.renderTodos();
+            // Initialize instruction text without animation on first load
+            const instructionSpan = this.todoInstruction.querySelector('span');
+            this.currentInstructionText = 'Press enter to save task';
+            instructionSpan.textContent = this.currentInstructionText;
         }
     }
     

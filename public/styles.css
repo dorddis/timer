@@ -492,6 +492,8 @@ body {
     font-size: 0.75rem;
     color: rgba(232, 232, 232, 0.4);
     font-style: italic;
+    transition: opacity 0.2s ease;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 #todoInput {
