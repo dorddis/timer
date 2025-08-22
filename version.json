@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "2.0.0",
   "developmentStats": {
     "startDate": "2025-08-21 21:58:51",
     "totalCommits": 6,
@@ -8,6 +8,22 @@
     "coreFiles": 10
   },
   "changelog": [
+    {
+      "version": "2.0.0",
+      "date": "2025-08-22",
+      "changes": [
+        "MAJOR: Added floating todo list system with elegant minimal design",
+        "MAJOR: Implemented comprehensive theme system (Dark, Brown, Light)",
+        "MAJOR: Added mouse-following highlight on timer dial for enhanced UX",
+        "Added typewriter animations for dynamic instruction text",
+        "Added task management with click-to-start functionality",
+        "Added celebration messages when completing all planned tasks",
+        "Enhanced UI state management during timer operations",
+        "Improved visual feedback during hover and dragging interactions",
+        "Added persistent todo storage with localStorage integration",
+        "Enhanced input field behavior with proper disable/enable states"
+      ]
+    },
     {
       "version": "1.3.0",
       "date": "2025-08-22",

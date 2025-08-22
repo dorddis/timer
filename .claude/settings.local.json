@@ -8,7 +8,9 @@
       "Bash(npm start)",
       "Bash(node:*)",
       "Bash(git rm:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(start index.html)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": [],

@@ -12,6 +12,24 @@
     --timer-bg-hover: rgba(35, 35, 35, 0.8);
     --timer-bg-dragging: rgba(45, 45, 45, 0.8);
     --shadow-color: rgba(0, 0, 0, 0.3);
+    --timer-finished-color: #ff4444;
+    --timer-finished-glow: rgba(255, 68, 68, 0.8);
+    --timer-completed-color: #32cd32;
+    --timer-completed-glow: rgba(50, 205, 50, 0.8);
+    --delete-color: rgba(255, 100, 100, 0.7);
+    --delete-color-hover: rgba(255, 100, 100, 1);
+    --delete-bg-hover: rgba(255, 100, 100, 0.1);
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+    --modal-shadow: rgba(0, 0, 0, 0.5);
+    --version-text: rgba(232, 232, 232, 0.15);
+    --text-shadow-subtle: rgba(0, 0, 0, 0.2);
+    --text-shadow-primary: rgba(232, 232, 232, 0.5);
+    --text-shadow-primary-strong: rgba(232, 232, 232, 0.8);
+    --danger-bg: rgba(220, 80, 80, 0.2);
+    --danger-border: rgba(220, 80, 80, 0.4);
+    --danger-text: rgba(255, 120, 120, 0.9);
+    --danger-bg-hover: rgba(220, 80, 80, 0.3);
+    --danger-border-hover: rgba(220, 80, 80, 0.6);
 }
 
 * {
@@ -76,6 +94,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .timer-display:hover {
@@ -89,11 +108,34 @@ body {
     background: radial-gradient(circle, var(--timer-bg-dragging) 0%, var(--bg-primary) 70%);
 }
 
+.timer-highlight {
+    position: absolute;
+    pointer-events: none;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 40%,
+        transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+    transform: translate(0, 0);
+}
+
+.timer-display.dragging .timer-highlight {
+    background: radial-gradient(circle, 
+        rgba(232, 232, 232, 0.15) 0%, 
+        rgba(232, 232, 232, 0.08) 40%,
+        transparent 70%);
+}
+
 .time-digits {
     font-size: 4rem;
     font-weight: 700;
     letter-spacing: 0.1em;
-    text-shadow: 0 0 20px rgba(232, 232, 232, 0.5);
+    text-shadow: 0 0 20px var(--text-shadow-primary);
     transition: all 0.3s ease;
     margin-bottom: 0.5rem;
     line-height: 1;
@@ -104,21 +146,21 @@ body {
 }
 
 .timer-display.finished .time-digits {
-    color: #ff4444;
-    text-shadow: 0 0 30px rgba(255, 68, 68, 0.8);
+    color: var(--timer-finished-color);
+    text-shadow: 0 0 30px var(--timer-finished-glow);
     animation: flash 0.5s infinite alternate;
 }
 
 .timer-display.completed .time-digits {
-    color: #32cd32;
-    text-shadow: 0 0 30px rgba(50, 205, 50, 0.8);
+    color: var(--timer-completed-color);
+    text-shadow: 0 0 30px var(--timer-completed-glow);
     animation: celebrate 1s infinite alternate;
 }
 
 @keyframes pulse {
-    0% { text-shadow: 0 0 20px rgba(232, 232, 232, 0.5); }
-    50% { text-shadow: 0 0 30px rgba(232, 232, 232, 0.8); }
-    100% { text-shadow: 0 0 20px rgba(232, 232, 232, 0.5); }
+    0% { text-shadow: 0 0 20px var(--text-shadow-primary); }
+    50% { text-shadow: 0 0 30px var(--text-shadow-primary-strong); }
+    100% { text-shadow: 0 0 20px var(--text-shadow-primary); }
 }
 
 @keyframes flash {
@@ -128,11 +170,11 @@ body {
 
 @keyframes celebrate {
     0% { 
-        text-shadow: 0 0 30px rgba(50, 205, 50, 0.8);
+        text-shadow: 0 0 30px var(--timer-completed-glow);
         transform: scale(1);
     }
     100% { 
-        text-shadow: 0 0 50px rgba(50, 205, 50, 1);
+        text-shadow: 0 0 50px var(--timer-completed-glow);
         transform: scale(1.05);
     }
 }
@@ -199,7 +241,7 @@ body {
     top: 1rem;
     left: 1rem;
     font-size: 0.7rem;
-    color: rgba(232, 232, 232, 0.15);
+    color: var(--version-text);
     font-weight: 400;
     z-index: 5;
     transition: all 0.3s ease;
@@ -295,7 +337,7 @@ body {
     color: var(--text-muted);
     font-weight: 200;
     transition: all 0.4s ease;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 3px var(--text-shadow-subtle);
     filter: blur(0.2px);
 }
 
@@ -437,7 +479,7 @@ body {
 .task-delete {
     background: none;
     border: none;
-    color: rgba(255, 100, 100, 0.7);
+    color: var(--delete-color);
     cursor: pointer;
     padding: 0.25rem;
     transition: all 0.3s ease;
@@ -448,7 +490,7 @@ body {
 }
 
 .task-delete:hover {
-    color: rgba(255, 100, 100, 1);
+    color: var(--delete-color-hover);
 }
 
 @keyframes fadeIn {
@@ -463,12 +505,12 @@ body {
     transform: translateY(-50%) translateX(-120%);
     width: 280px;
     max-height: 400px;
-    background: rgba(15, 15, 15, 0.95);
-    border: 1px solid rgba(232, 232, 232, 0.15);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(232, 232, 232, 0.1);
+    box-shadow: 0 20px 40px var(--shadow-color), 0 0 0 1px var(--border-color);
     z-index: 25;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0;
@@ -485,13 +527,13 @@ body {
 
 .todo-header {
     padding: 1.25rem 1.25rem 0.75rem;
-    border-bottom: 1px solid rgba(232, 232, 232, 0.08);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .todo-title {
     font-size: 0.95rem;
     font-weight: 500;
-    color: rgba(232, 232, 232, 0.9);
+    color: var(--text-primary);
     letter-spacing: 0.02em;
 }
 
@@ -502,12 +544,12 @@ body {
 
 .todo-instruction {
     padding: 0 1.25rem 1rem;
-    border-bottom: 1px solid rgba(232, 232, 232, 0.08);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .todo-instruction span {
     font-size: 0.75rem;
-    color: rgba(232, 232, 232, 0.4);
+    color: var(--text-muted);
     font-style: italic;
     transition: opacity 0.2s ease;
     font-family: 'JetBrains Mono', monospace;
@@ -515,10 +557,10 @@ body {
 
 #todoInput {
     width: 100%;
-    background: rgba(25, 25, 25, 0.6);
-    border: 1px solid rgba(232, 232, 232, 0.1);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: #e8e8e8;
+    color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85rem;
     padding: 0.75rem;
@@ -528,14 +570,14 @@ body {
 }
 
 #todoInput::placeholder {
-    color: rgba(232, 232, 232, 0.4);
+    color: var(--text-muted);
     opacity: 1;
 }
 
 #todoInput:focus {
-    border-color: rgba(232, 232, 232, 0.25);
-    background: rgba(35, 35, 35, 0.6);
-    box-shadow: 0 0 0 2px rgba(232, 232, 232, 0.05);
+    border-color: var(--accent-color);
+    background: var(--bg-tertiary);
+    box-shadow: 0 0 0 2px var(--border-color);
 }
 
 .todo-list {
@@ -555,18 +597,18 @@ body {
 }
 
 .todo-list::-webkit-scrollbar-thumb {
-    background: rgba(232, 232, 232, 0.15);
+    background: var(--accent-color);
     border-radius: 2px;
     transition: background 0.3s ease;
 }
 
 .todo-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(232, 232, 232, 0.25);
+    background: var(--text-muted);
 }
 
 .no-todos {
     text-align: center;
-    color: rgba(232, 232, 232, 0.4);
+    color: var(--text-muted);
     font-size: 0.8rem;
     padding: 2rem 1rem;
     font-style: italic;
@@ -583,8 +625,8 @@ body {
 }
 
 .todo-item:hover {
-    background: rgba(232, 232, 232, 0.04);
-    border-color: rgba(232, 232, 232, 0.08);
+    background: var(--accent-color);
+    border-color: var(--border-color);
 }
 
 .todo-item:active {
@@ -601,7 +643,7 @@ body {
 .todo-text {
     flex: 1;
     font-size: 0.85rem;
-    color: rgba(232, 232, 232, 0.85);
+    color: var(--text-primary);
     line-height: 1.4;
     word-break: break-word;
 }
@@ -618,7 +660,7 @@ body {
 .todo-delete {
     background: none;
     border: none;
-    color: rgba(255, 100, 100, 0.6);
+    color: var(--delete-color);
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 4px;
@@ -632,8 +674,8 @@ body {
 }
 
 .todo-delete:hover {
-    color: rgba(255, 100, 100, 0.9);
-    background: rgba(255, 100, 100, 0.1);
+    color: var(--delete-color-hover);
+    background: var(--delete-bg-hover);
 }
 
 @media (max-width: 768px) {
@@ -851,7 +893,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--modal-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -873,7 +915,7 @@ body {
     padding: 2rem;
     max-width: 400px;
     min-width: 320px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 40px var(--modal-shadow);
     transform: scale(0.9) translateY(20px);
     transition: all 0.2s ease;
 }
@@ -920,14 +962,14 @@ body {
 }
 
 .modal-button.primary {
-    background: rgba(220, 80, 80, 0.2);
-    border-color: rgba(220, 80, 80, 0.4);
-    color: rgba(255, 120, 120, 0.9);
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
 }
 
 .modal-button.primary:hover {
-    background: rgba(220, 80, 80, 0.3);
-    border-color: rgba(220, 80, 80, 0.6);
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border-hover);
 }
 
 /* Task deletion animations */
@@ -991,7 +1033,7 @@ body {
     z-index: 1000;
     opacity: 0;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--text-shadow-subtle);
     backdrop-filter: blur(10px);
 }
 

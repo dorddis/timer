@@ -25,6 +25,11 @@ class TodoManager {
     }
 
     toggleTodoWindow() {
+        // Don't allow toggling todo window when timer is running
+        if (window.app.timer.isRunning) {
+            return;
+        }
+        
         this.todoWindowOpen = !this.todoWindowOpen;
         this.todoWindow.classList.toggle('open', this.todoWindowOpen);
         this.todoToggle.classList.toggle('open', this.todoWindowOpen);
@@ -56,10 +61,16 @@ class TodoManager {
     handleTodoInputKeydown(e) {
         if (e.code === 'Enter') {
             this.addTodo();
+            this.todoInput.blur();
         }
     }
 
     handleTodoListClick(e) {
+        // Don't allow todo interactions when timer is running
+        if (window.app.timer.isRunning) {
+            return;
+        }
+        
         const todoItem = e.target.closest('.todo-item');
         if (!todoItem) return;
         

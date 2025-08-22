@@ -19,6 +19,7 @@ class UIManager {
         this.taskInputContainer = document.querySelector('.task-input-container');
         this.controls = document.querySelector('.controls');
         this.currentTaskName = '';
+        this.createTimerHighlight();
     }
 
     setupEventListeners() {
@@ -40,6 +41,46 @@ class UIManager {
         document.addEventListener('click', this.handleOutsideClick.bind(this));
         
         this.timerDisplay.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Mouse tracking for highlight
+        this.timerDisplay.addEventListener('mousemove', this.updateTimerHighlight.bind(this));
+        this.timerDisplay.addEventListener('mouseenter', this.showTimerHighlight.bind(this));
+        this.timerDisplay.addEventListener('mouseleave', this.hideTimerHighlight.bind(this));
+    }
+
+    createTimerHighlight() {
+        this.timerHighlight = document.createElement('div');
+        this.timerHighlight.className = 'timer-highlight';
+        this.timerDisplay.appendChild(this.timerHighlight);
+    }
+
+    updateTimerHighlight(e) {
+        if (!this.timerHighlight) return;
+        
+        const rect = this.timerDisplay.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Position highlight centered on mouse position
+        const highlightX = mouseX - 40; // Half of highlight width (80px)
+        const highlightY = mouseY - 40; // Half of highlight height (80px)
+        
+        this.timerHighlight.style.left = highlightX + 'px';
+        this.timerHighlight.style.top = highlightY + 'px';
+    }
+
+    showTimerHighlight() {
+        if (this.timerHighlight) {
+            this.timerHighlight.style.opacity = '1';
+        }
+    }
+
+    hideTimerHighlight() {
+        if (this.timerHighlight && !window.app.timer.isDragging) {
+            this.timerHighlight.style.opacity = '0';
+        }
     }
 
     handleMouseDown(e) {
@@ -50,6 +91,11 @@ class UIManager {
         window.app.timer.dragStartY = e.clientY;
         window.app.timer.dragStartTime = window.app.timer.totalSeconds;
         this.timerDisplay.classList.add('dragging');
+        
+        // Show and update highlight position when starting to drag
+        this.updateTimerHighlight(e);
+        this.showTimerHighlight();
+        
         e.preventDefault();
     }
 
@@ -70,6 +116,11 @@ class UIManager {
         this.updateDisplay();
         this.updateStatus();
         window.app.storage.saveState();
+        
+        // Update highlight position during dragging if mouse is over timer
+        if (e.target === this.timerDisplay || this.timerDisplay.contains(e.target)) {
+            this.updateTimerHighlight(e);
+        }
     }
 
     handleMouseUp() {
@@ -77,6 +128,9 @@ class UIManager {
             window.app.timer.isDragging = false;
             this.timerDisplay.classList.remove('dragging');
             window.app.storage.saveState();
+            
+            // Hide highlight when dragging ends
+            this.hideTimerHighlight();
         }
     }
 
@@ -260,10 +314,13 @@ class UIManager {
                 i++;
                 this.typewriterTimeout = setTimeout(typeChar, 80 + Math.random() * 60);
             } else {
-                // After typing completes, just clean up - don't clear input
+                // After typing completes, just clean up - check if timer is running
                 this.typewriterTimeout = setTimeout(() => {
                     this.taskInput.classList.remove('typewriter-active');
-                    this.taskInput.disabled = false;
+                    // Only re-enable if timer is not running
+                    if (!window.app.timer.isRunning) {
+                        this.taskInput.disabled = false;
+                    }
                     this.typewriterTimeout = null;
                 }, 500);
             }
@@ -356,6 +413,11 @@ class UIManager {
         e.preventDefault();
         e.stopPropagation();
         
+        // Don't allow task history interactions when timer is running
+        if (window.app.timer.isRunning) {
+            return;
+        }
+        
         const deleteButton = e.target.closest('.task-delete');
         const taskText = e.target.closest('.task-text');
         
@@ -376,8 +438,8 @@ class UIManager {
     }
 
     clearTaskHistory() {
-        // Prevent multiple clear operations
-        if (this.clearingInProgress) {
+        // Prevent multiple clear operations or clearing when timer is running
+        if (this.clearingInProgress || window.app.timer.isRunning) {
             return;
         }
         
@@ -573,7 +635,7 @@ class UIManager {
     }
 
     editTaskName(textElement, taskIndex) {
-        if (textElement.classList.contains('editing')) {
+        if (textElement.classList.contains('editing') || window.app.timer.isRunning) {
             return;
         }
         
@@ -641,15 +703,23 @@ class UIManager {
     }
 
     clearTaskInputWithAnimation() {
+        // Prevent multiple clearing animations
+        if (this.clearingInProgress) {
+            return;
+        }
+        
+        this.clearingInProgress = true;
+        
         // Clear any existing animation first
         if (this.typewriterTimeout) {
             clearTimeout(this.typewriterTimeout);
             this.typewriterTimeout = null;
         }
         
-        // Make sure input is enabled
+        // Make sure input is enabled and clear placeholder immediately
         this.taskInput.disabled = false;
         this.taskInput.classList.remove('typewriter-active');
+        this.taskInput.placeholder = ''; // Clear placeholder to prevent flash
         
         // If input is already empty, just restore placeholder with animation
         if (!this.taskInput.value.trim()) {
@@ -701,11 +771,15 @@ class UIManager {
                 i++;
                 this.typewriterTimeout = setTimeout(typePlaceholderChar, 60 + Math.random() * 40);
             } else {
-                // Animation complete - restore normal state
+                // Animation complete - restore normal state, check if timer is running
                 this.typewriterTimeout = setTimeout(() => {
                     this.taskInput.classList.remove('typewriter-active');
-                    this.taskInput.disabled = false;
+                    // Only re-enable if timer is not running
+                    if (!window.app.timer.isRunning) {
+                        this.taskInput.disabled = false;
+                    }
                     this.typewriterTimeout = null;
+                    this.clearingInProgress = false; // Reset the flag
                 }, 500);
             }
         };

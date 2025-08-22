@@ -15,7 +15,25 @@ class ThemeManager {
                     '--timer-bg': 'rgba(25, 25, 25, 0.8)',
                     '--timer-bg-hover': 'rgba(35, 35, 35, 0.8)',
                     '--timer-bg-dragging': 'rgba(45, 45, 45, 0.8)',
-                    '--shadow-color': 'rgba(0, 0, 0, 0.3)'
+                    '--shadow-color': 'rgba(0, 0, 0, 0.3)',
+                    '--timer-finished-color': '#ff4444',
+                    '--timer-finished-glow': 'rgba(255, 68, 68, 0.8)',
+                    '--timer-completed-color': '#32cd32',
+                    '--timer-completed-glow': 'rgba(50, 205, 50, 0.8)',
+                    '--delete-color': 'rgba(255, 100, 100, 0.7)',
+                    '--delete-color-hover': 'rgba(255, 100, 100, 1)',
+                    '--delete-bg-hover': 'rgba(255, 100, 100, 0.1)',
+                    '--modal-overlay': 'rgba(0, 0, 0, 0.7)',
+                    '--modal-shadow': 'rgba(0, 0, 0, 0.5)',
+                    '--version-text': 'rgba(232, 232, 232, 0.15)',
+                    '--text-shadow-subtle': 'rgba(0, 0, 0, 0.2)',
+                    '--text-shadow-primary': 'rgba(232, 232, 232, 0.5)',
+                    '--text-shadow-primary-strong': 'rgba(232, 232, 232, 0.8)',
+                    '--danger-bg': 'rgba(220, 80, 80, 0.2)',
+                    '--danger-border': 'rgba(220, 80, 80, 0.4)',
+                    '--danger-text': 'rgba(255, 120, 120, 0.9)',
+                    '--danger-bg-hover': 'rgba(220, 80, 80, 0.3)',
+                    '--danger-border-hover': 'rgba(220, 80, 80, 0.6)'
                 }
             },
             brown: {
@@ -32,7 +50,25 @@ class ThemeManager {
                     '--timer-bg': 'rgba(61, 39, 26, 0.8)',
                     '--timer-bg-hover': 'rgba(71, 49, 36, 0.8)',
                     '--timer-bg-dragging': 'rgba(81, 59, 46, 0.8)',
-                    '--shadow-color': 'rgba(29, 18, 12, 0.4)'
+                    '--shadow-color': 'rgba(29, 18, 12, 0.4)',
+                    '--timer-finished-color': '#d2691e',
+                    '--timer-finished-glow': 'rgba(210, 105, 30, 0.8)',
+                    '--timer-completed-color': '#8fbc8f',
+                    '--timer-completed-glow': 'rgba(143, 188, 143, 0.8)',
+                    '--delete-color': 'rgba(205, 92, 92, 0.8)',
+                    '--delete-color-hover': 'rgba(205, 92, 92, 1)',
+                    '--delete-bg-hover': 'rgba(205, 92, 92, 0.15)',
+                    '--modal-overlay': 'rgba(29, 18, 12, 0.8)',
+                    '--modal-shadow': 'rgba(29, 18, 12, 0.6)',
+                    '--version-text': 'rgba(244, 229, 211, 0.2)',
+                    '--text-shadow-subtle': 'rgba(29, 18, 12, 0.3)',
+                    '--text-shadow-primary': 'rgba(244, 229, 211, 0.4)',
+                    '--text-shadow-primary-strong': 'rgba(244, 229, 211, 0.6)',
+                    '--danger-bg': 'rgba(160, 82, 45, 0.3)',
+                    '--danger-border': 'rgba(160, 82, 45, 0.5)',
+                    '--danger-text': 'rgba(205, 133, 63, 0.9)',
+                    '--danger-bg-hover': 'rgba(160, 82, 45, 0.4)',
+                    '--danger-border-hover': 'rgba(160, 82, 45, 0.7)'
                 }
             },
             light: {
@@ -49,7 +85,25 @@ class ThemeManager {
                     '--timer-bg': 'rgba(245, 240, 235, 0.8)',
                     '--timer-bg-hover': 'rgba(240, 235, 230, 0.8)',
                     '--timer-bg-dragging': 'rgba(235, 230, 225, 0.8)',
-                    '--shadow-color': 'rgba(61, 41, 26, 0.1)'
+                    '--shadow-color': 'rgba(61, 41, 26, 0.1)',
+                    '--timer-finished-color': '#b22222',
+                    '--timer-finished-glow': 'rgba(178, 34, 34, 0.6)',
+                    '--timer-completed-color': '#228b22',
+                    '--timer-completed-glow': 'rgba(34, 139, 34, 0.6)',
+                    '--delete-color': 'rgba(178, 34, 34, 0.8)',
+                    '--delete-color-hover': 'rgba(178, 34, 34, 1)',
+                    '--delete-bg-hover': 'rgba(178, 34, 34, 0.1)',
+                    '--modal-overlay': 'rgba(61, 41, 26, 0.6)',
+                    '--modal-shadow': 'rgba(61, 41, 26, 0.3)',
+                    '--version-text': 'rgba(61, 41, 26, 0.2)',
+                    '--text-shadow-subtle': 'rgba(250, 247, 242, 0.8)',
+                    '--text-shadow-primary': 'rgba(61, 41, 26, 0.3)',
+                    '--text-shadow-primary-strong': 'rgba(61, 41, 26, 0.5)',
+                    '--danger-bg': 'rgba(205, 92, 92, 0.15)',
+                    '--danger-border': 'rgba(205, 92, 92, 0.3)',
+                    '--danger-text': 'rgba(139, 69, 19, 0.9)',
+                    '--danger-bg-hover': 'rgba(205, 92, 92, 0.25)',
+                    '--danger-border-hover': 'rgba(205, 92, 92, 0.5)'
                 }
             }
         };

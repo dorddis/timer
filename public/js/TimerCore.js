@@ -61,6 +61,12 @@ class TimerCore {
             this.updateTimerFromTimestamp();
         }, 1000);
         
+        // Disable task input and todo input when timer starts
+        window.app.ui.taskInput.disabled = true;
+        window.app.ui.taskInput.blur();
+        window.app.todo.todoInput.disabled = true;
+        window.app.todo.todoInput.blur();
+        
         window.app.ui.updateStatus();
         window.app.storage.saveState();
     }
@@ -74,6 +80,10 @@ class TimerCore {
             clearInterval(this.interval);
             this.interval = null;
         }
+        
+        // Re-enable task input and todo input when timer pauses
+        window.app.ui.taskInput.disabled = false;
+        window.app.todo.todoInput.disabled = false;
         
         window.app.ui.updateStatus();
         window.app.storage.saveState();
@@ -94,22 +104,23 @@ class TimerCore {
         
         this.stopAlarm();
         
+        // Re-enable task input and todo input when timer resets
+        window.app.ui.taskInput.disabled = false;
+        window.app.todo.todoInput.disabled = false;
+        
         window.app.ui.updateDisplay();
         window.app.ui.updateStatus();
         window.app.storage.saveState();
-        
-        // Clear task input if no todos remain
-        if (window.app.todo.todos.length === 0) {
-            setTimeout(() => {
-                window.app.ui.clearTaskInputWithAnimation();
-            }, 1000);
-        }
     }
 
     finish() {
         this.isRunning = false;
         clearInterval(this.interval);
         this.interval = null;
+        
+        // Re-enable task input and todo input when timer finishes
+        window.app.ui.taskInput.disabled = false;
+        window.app.todo.todoInput.disabled = false;
         
         window.app.ui.showFinished();
         this.playAlarm();
@@ -126,6 +137,10 @@ class TimerCore {
             clearInterval(this.interval);
             this.interval = null;
         }
+        
+        // Re-enable task input and todo input when task completes
+        window.app.ui.taskInput.disabled = false;
+        window.app.todo.todoInput.disabled = false;
         
         window.app.ui.showCompleted();
         this.addCompletedTask();
