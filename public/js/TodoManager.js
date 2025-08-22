@@ -16,12 +16,14 @@ class TodoManager {
         this.todoInput = document.getElementById('todoInput');
         this.todoInstruction = document.getElementById('todoInstruction');
         this.todoList = document.getElementById('todoList');
+        this.todoSaveBtn = document.getElementById('todoSaveBtn');
     }
 
     setupEventListeners() {
         this.todoToggle.addEventListener('click', this.toggleTodoWindow.bind(this));
         this.todoInput.addEventListener('keydown', this.handleTodoInputKeydown.bind(this));
         this.todoList.addEventListener('click', this.handleTodoListClick.bind(this));
+        this.todoSaveBtn.addEventListener('click', this.handleSaveClick.bind(this));
     }
 
     toggleTodoWindow() {
@@ -63,6 +65,11 @@ class TodoManager {
             this.addTodo();
             this.todoInput.blur();
         }
+    }
+
+    handleSaveClick() {
+        this.addTodo();
+        this.todoInput.blur();
     }
 
     handleTodoListClick(e) {

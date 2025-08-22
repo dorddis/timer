@@ -15,17 +15,26 @@ class UIManager {
         this.sidebar = document.getElementById('sidebar');
         this.tasksList = document.getElementById('tasksList');
         this.clearHistory = document.getElementById('clearHistory');
+        this.sidebarClose = document.getElementById('sidebarClose');
         this.timerContainer = document.querySelector('.timer-container');
         this.taskInputContainer = document.querySelector('.task-input-container');
         this.controls = document.querySelector('.controls');
+        this.mobileReset = document.getElementById('mobileReset');
+        this.mobileComplete = document.getElementById('mobileComplete');
         this.currentTaskName = '';
         this.createTimerHighlight();
     }
 
     setupEventListeners() {
+        // Mouse events
         this.timerDisplay.addEventListener('mousedown', this.handleMouseDown.bind(this));
         document.addEventListener('mousemove', this.handleMouseMove.bind(this));
         document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        
+        // Touch events for mobile
+        this.timerDisplay.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        document.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+        document.addEventListener('touchend', this.handleTouchEnd.bind(this));
         
         this.timerDisplay.addEventListener('wheel', this.handleWheel.bind(this));
         this.timerDisplay.addEventListener('click', this.handleClick.bind(this));
@@ -34,7 +43,12 @@ class UIManager {
         document.addEventListener('keydown', this.handleKeydown.bind(this));
         
         this.sidebarToggle.addEventListener('click', this.toggleSidebar.bind(this));
+        this.sidebarClose.addEventListener('click', this.closeSidebar.bind(this));
         this.clearHistory.addEventListener('click', this.clearTaskHistory.bind(this));
+        
+        // Mobile buttons
+        this.mobileReset.addEventListener('click', this.handleMobileReset.bind(this));
+        this.mobileComplete.addEventListener('click', this.handleMobileComplete.bind(this));
         this.taskInput.addEventListener('input', this.handleTaskInput.bind(this));
         
         this.tasksList.addEventListener('click', this.handleTaskListClick.bind(this));
@@ -132,6 +146,88 @@ class UIManager {
             // Hide highlight when dragging ends
             this.hideTimerHighlight();
         }
+    }
+
+    handleTouchStart(e) {
+        if (window.app.timer.isRunning) return;
+        
+        // Prevent mouse events from firing
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        window.app.timer.isDragging = true;
+        window.app.timer.hasDragged = false;
+        window.app.timer.dragStartY = touch.clientY;
+        window.app.timer.dragStartTime = window.app.timer.totalSeconds;
+        this.timerDisplay.classList.add('dragging');
+        
+        // Update highlight for touch
+        this.updateTimerHighlightTouch(touch);
+        this.showTimerHighlight();
+    }
+
+    handleTouchMove(e) {
+        if (!window.app.timer.isDragging || window.app.timer.isRunning) return;
+        
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const deltaY = window.app.timer.dragStartY - touch.clientY;
+        const sensitivity = 2;
+        const timeChange = Math.round(deltaY * sensitivity);
+        
+        if (Math.abs(deltaY) > 3) {
+            window.app.timer.hasDragged = true;
+        }
+        
+        window.app.timer.totalSeconds = Math.max(0, Math.min(5999, window.app.timer.dragStartTime + timeChange));
+        window.app.timer.remainingSeconds = window.app.timer.totalSeconds;
+        window.app.timer.actualElapsedSeconds = 0;
+        this.updateDisplay();
+        this.updateStatus();
+        window.app.storage.saveState();
+        
+        // Update highlight position during touch drag
+        this.updateTimerHighlightTouch(touch);
+    }
+
+    handleTouchEnd(e) {
+        if (window.app.timer.isDragging) {
+            const wasDragging = window.app.timer.hasDragged;
+            window.app.timer.isDragging = false;
+            this.timerDisplay.classList.remove('dragging');
+            window.app.storage.saveState();
+            
+            // Hide highlight when touch dragging ends
+            this.hideTimerHighlight();
+            
+            // If this was a tap (no significant dragging), trigger start/stop
+            if (!wasDragging && window.app.timer.totalSeconds > 0) {
+                if (window.app.timer.isRunning) {
+                    window.app.timer.pause();
+                } else {
+                    window.app.timer.start();
+                }
+            }
+            
+            // Reset drag flag for next interaction
+            window.app.timer.hasDragged = false;
+        }
+    }
+
+    updateTimerHighlightTouch(touch) {
+        if (!this.timerHighlight) return;
+        
+        const rect = this.timerDisplay.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+        
+        // Position highlight centered on touch position
+        const highlightX = touchX - 40; // Half of highlight width (80px)
+        const highlightY = touchY - 40; // Half of highlight height (80px)
+        
+        this.timerHighlight.style.left = highlightX + 'px';
+        this.timerHighlight.style.top = highlightY + 'px';
     }
 
     handleWheel(e) {
@@ -241,27 +337,30 @@ class UIManager {
 
     updateStatus() {
         if (window.app.timer.totalSeconds === 0) {
-            this.timerStatus.textContent = 'Click and drag to set time';
+            this.timerStatus.textContent = 'Drag up/down to set time';
             this.timerDisplay.classList.remove('running', 'finished', 'completed');
         } else if (window.app.timer.isRunning && window.app.timer.remainingSeconds < 0) {
-            this.timerStatus.textContent = 'Overtime - C to complete';
+            this.timerStatus.textContent = 'Overtime - Tap complete';
             this.timerDisplay.classList.add('running', 'finished');
             this.timerDisplay.classList.remove('completed');
         } else if (window.app.timer.isRunning) {
-            this.timerStatus.textContent = 'Running... Click to pause';
+            this.timerStatus.textContent = 'Running... Tap to pause';
             this.timerDisplay.classList.add('running');
             this.timerDisplay.classList.remove('finished', 'completed');
         } else if (window.app.timer.isPaused) {
-            this.timerStatus.textContent = 'Paused - Click to resume';
+            this.timerStatus.textContent = 'Paused - Tap to resume';
             this.timerDisplay.classList.remove('running', 'finished', 'completed');
         } else if (window.app.timer.remainingSeconds <= 0 && window.app.timer.totalSeconds > 0) {
-            this.timerStatus.textContent = 'Time up! C to complete';
+            this.timerStatus.textContent = 'Time up! Tap complete';
             this.timerDisplay.classList.add('finished');
             this.timerDisplay.classList.remove('running', 'completed');
         } else {
-            this.timerStatus.textContent = 'Click to start timer';
+            this.timerStatus.textContent = 'Tap to start timer';
             this.timerDisplay.classList.remove('running', 'finished', 'completed');
         }
+        
+        // Update mobile buttons
+        this.updateMobileButtons();
     }
 
     showFinished() {
@@ -798,5 +897,28 @@ class UIManager {
             }
         });
         this.activeConfetti = [];
+    }
+
+    handleMobileReset() {
+        window.app.timer.reset();
+    }
+
+    handleMobileComplete() {
+        if (window.app.timer.isRunning) {
+            window.app.timer.completeTask();
+        }
+    }
+
+    updateMobileButtons() {
+        if (!this.mobileComplete) return;
+        
+        // Update complete button
+        if (window.app.timer.isRunning) {
+            this.mobileComplete.classList.add('enabled');
+            this.mobileComplete.classList.remove('disabled');
+        } else {
+            this.mobileComplete.classList.remove('enabled');
+            this.mobileComplete.classList.add('disabled');
+        }
     }
 }

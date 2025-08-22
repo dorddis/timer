@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "developmentStats": {
     "startDate": "2025-08-21 21:58:51",
     "totalCommits": 6,
@@ -8,6 +8,22 @@
     "coreFiles": 10
   },
   "changelog": [
+    {
+      "version": "2.1.0",
+      "date": "2025-08-22",
+      "changes": [
+        "MAJOR: Enhanced mobile responsiveness with comprehensive touch support",
+        "Added elegant icon-only floating action buttons for mobile",
+        "Fixed mobile timer start/stop tap functionality",
+        "Added mobile-specific save button in todo list",
+        "Implemented bottom-sheet pattern for todo list on mobile",
+        "Added full-screen sidebar experience on mobile devices",
+        "Fixed mobile touch event handling for timer dial interactions",
+        "Improved mobile button alignment and visual consistency",
+        "Enhanced theme consistency across all mobile elements",
+        "Added proper mobile spacing and layout adjustments"
+      ]
+    },
     {
       "version": "2.0.0",
       "date": "2025-08-22",

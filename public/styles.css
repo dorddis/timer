@@ -52,6 +52,8 @@ body {
     user-select: none;
     position: relative;
     transition: background-color 0.3s ease, color 0.3s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .timer-container {
@@ -95,6 +97,9 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
 }
 
 .timer-display:hover {
@@ -115,8 +120,8 @@ body {
     height: 80px;
     border-radius: 50%;
     background: radial-gradient(circle, 
-        rgba(255, 255, 255, 0.1) 0%, 
-        rgba(255, 255, 255, 0.05) 40%,
+        var(--accent-color) 0%, 
+        var(--text-muted) 40%,
         transparent 70%);
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -126,8 +131,8 @@ body {
 
 .timer-display.dragging .timer-highlight {
     background: radial-gradient(circle, 
-        rgba(232, 232, 232, 0.15) 0%, 
-        rgba(232, 232, 232, 0.08) 40%,
+        var(--accent-color) 0%, 
+        var(--text-muted) 40%,
         transparent 70%);
 }
 
@@ -205,6 +210,17 @@ body {
 }
 
 @media (max-width: 768px) {
+    body {
+        padding: 1rem;
+        overflow-y: auto;
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .timer-container {
+        gap: 1.5rem;
+    }
+    
     .timer-display {
         width: 280px;
         height: 280px;
@@ -222,9 +238,50 @@ body {
     .control-hint {
         font-size: 0.7rem;
     }
+    
+    .control-hint span {
+        display: none;
+    }
+    
+    .control-hint::after {
+        content: "Use floating buttons for quick actions";
+    }
+    
+    .controls {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        transform: none;
+        margin-top: 1rem;
+    }
+    
+    .controls.sidebar-open {
+        transform: none;
+    }
+    
+    .task-input-container {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin-top: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .task-input-container.sidebar-open {
+        transform: none;
+    }
 }
 
 @media (max-width: 480px) {
+    body {
+        padding: 0.5rem;
+    }
+    
+    .timer-container {
+        gap: 1rem;
+    }
+    
     .timer-display {
         width: 240px;
         height: 240px;
@@ -233,6 +290,16 @@ body {
     
     .time-digits {
         font-size: 2.5rem;
+    }
+    
+    .timer-status {
+        font-size: 0.75rem;
+    }
+    
+    .control-hint {
+        font-size: 0.65rem;
+        padding: 0 1rem;
+        text-align: center;
     }
 }
 
@@ -301,6 +368,9 @@ body {
     justify-content: center;
     border-radius: 4px;
     transition: all 0.3s ease;
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
 }
 
 .sidebar-toggle:hover {
@@ -325,6 +395,18 @@ body {
     z-index: 30;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0.5rem;
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+    .todo-toggle {
+        bottom: 2rem;
+        left: 50%;
+        top: auto;
+        transform: translateX(-50%) rotate(-90deg);
+    }
 }
 
 .todo-toggle:hover .todo-toggle-arrow {
@@ -344,6 +426,12 @@ body {
 .todo-toggle.open .todo-toggle-arrow {
     opacity: 0.7;
     transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+    .todo-toggle.open .todo-toggle-arrow {
+        transform: translateY(-2px) rotate(180deg);
+    }
 }
 
 
@@ -371,6 +459,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
 }
 
 .sidebar-header h3 {
@@ -394,6 +483,36 @@ body {
 .clear-history:hover {
     border-color: var(--accent-color);
     color: var(--text-primary);
+}
+
+.sidebar-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.sidebar-close:hover {
+    background: var(--accent-color);
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .sidebar-close {
+        display: flex;
+    }
+    
+    .sidebar-header {
+        padding: 1.5rem 1rem 0.75rem;
+    }
 }
 
 .tasks-list {
@@ -540,6 +659,43 @@ body {
 
 .todo-input-wrapper {
     padding: 1rem 1.25rem 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.todo-save-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: none;
+    touch-action: manipulation;
+    min-width: 56px;
+    font-family: 'JetBrains Mono', monospace;
+    box-shadow: 0 1px 3px var(--shadow-color);
+    box-sizing: border-box;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    letter-spacing: 0;
+}
+
+.todo-save-btn:hover {
+    background: var(--accent-color);
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.todo-save-btn:active {
+    transform: translateY(0);
 }
 
 .todo-instruction {
@@ -680,31 +836,60 @@ body {
 
 @media (max-width: 768px) {
     #taskInput {
-        width: 250px;
+        width: min(300px, calc(100vw - 4rem));
         font-size: 0.8rem;
+        flex: 1;
     }
     
     .sidebar {
-        width: 280px;
-        right: -280px;
+        width: 100vw;
+        right: -100vw;
     }
     
     .sidebar-toggle {
         right: 1rem;
+        top: 1.5rem;
     }
     
     .todo-window {
-        width: 260px;
-        left: 3.5rem;
+        width: calc(100vw - 2rem);
+        left: 1rem;
+        right: 1rem;
+        top: auto;
+        bottom: 1rem;
+        transform: translateY(120%);
+        max-height: 70vh;
+    }
+    
+    .todo-window.open {
+        transform: translateY(0);
     }
     
     .todo-toggle {
-        left: 0.75rem;
         padding: 0.4rem;
     }
     
     .todo-toggle-arrow {
         font-size: 1.3rem;
+    }
+    
+    .version-display {
+        top: 0.5rem;
+        left: 0.5rem;
+        font-size: 0.65rem;
+        margin: 0.25rem;
+    }
+    
+    .todo-save-btn {
+        display: flex;
+    }
+    
+    .todo-instruction {
+        display: none;
+    }
+    
+    .todo-actions {
+        opacity: 1;
     }
 }
 
@@ -715,6 +900,8 @@ body {
     right: 1rem;
     width: 2.5rem;
     height: 2.5rem;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -730,6 +917,7 @@ body {
     opacity: 0;
     visibility: hidden;
     transform: scale(0.8);
+    touch-action: manipulation;
 }
 
 .settings-toggle.visible {
@@ -861,7 +1049,7 @@ body {
 
 .theme-preview-light {
     background: linear-gradient(135deg, #faf7f2 0%, #f5f0eb 100%);
-    border-color: rgba(61, 41, 26, 0.2);
+    border-color: var(--border-color);
 }
 
 .theme-name {
@@ -879,9 +1067,66 @@ body {
     }
     
     .settings-panel {
-        width: 260px;
+        width: min(280px, calc(100vw - 2rem));
         right: 1rem;
         bottom: 4rem;
+        left: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    #taskInput {
+        width: min(250px, calc(100vw - 2rem));
+        font-size: 0.75rem;
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .sidebar {
+        width: 100vw;
+        right: -100vw;
+    }
+    
+    .sidebar-header {
+        padding: 1.5rem 1rem 0.75rem;
+    }
+    
+    .sidebar-header h3 {
+        font-size: 1rem;
+    }
+    
+    .todo-window {
+        width: calc(100vw - 1rem);
+        left: 0.5rem;
+        right: 0.5rem;
+        top: auto;
+        bottom: 0.5rem;
+        transform: translateY(120%);
+        max-height: 60vh;
+    }
+    
+    .todo-window.open {
+        transform: translateY(0);
+    }
+    
+    
+    .settings-panel {
+        width: calc(100vw - 1rem);
+        right: 0.5rem;
+        left: 0.5rem;
+        bottom: 4rem;
+    }
+    
+    .modal {
+        max-width: calc(100vw - 2rem);
+        min-width: auto;
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .version-display {
+        top: 0.25rem;
+        left: 0.25rem;
+        font-size: 0.6rem;
     }
 }
 
@@ -1043,6 +1288,24 @@ body {
     transform: translateY(-50%);
 }
 
+@media (max-width: 768px) {
+    .task-notification {
+        top: auto;
+        bottom: -100px;
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+        transform: none;
+        text-align: center;
+    }
+    
+    .task-notification.show {
+        bottom: 2rem;
+        left: 1rem;
+        transform: none;
+    }
+}
+
 /* Typewriter effect for task input */
 .task-input-container input.typewriter-active {
     caret-color: transparent;
@@ -1061,5 +1324,189 @@ body {
     }
     51%, 100% {
         opacity: 0;
+    }
+}/* Landscape orientation for mobile devices */
+@media (max-height: 600px) and (orientation: landscape) {
+    body {
+        height: auto;
+        min-height: 100vh;
+        padding: 0.5rem;
+        justify-content: flex-start;
+        overflow-y: auto;
+    }
+    
+    .timer-container {
+        margin-top: 1rem;
+        gap: 1rem;
+    }
+    
+    .timer-display {
+        width: 200px;
+        height: 200px;
+        padding: 1rem;
+    }
+    
+    .time-digits {
+        font-size: 2.2rem;
+    }
+    
+    .timer-status {
+        font-size: 0.7rem;
+    }
+    
+    .task-input-container {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .controls {
+        margin-top: 0.5rem;
+    }
+    
+    .control-hint {
+        font-size: 0.6rem;
+    }
+    
+    .todo-window {
+        width: 60vw;
+        left: 20vw;
+        right: 20vw;
+        top: auto;
+        bottom: 1rem;
+        max-height: 40vh;
+        transform: translateY(120%);
+    }
+    
+    .todo-window.open {
+        transform: translateY(0);
+    }
+    
+    .todo-toggle {
+        top: 30%;
+    }
+    
+    .sidebar {
+        width: min(280px, 40vw);
+        right: calc(-1 * min(280px, 40vw));
+    }
+}
+
+/* Very small screens in landscape */
+@media (max-height: 500px) and (orientation: landscape) {
+    .timer-display {
+        width: 160px;
+        height: 160px;
+        padding: 0.75rem;
+    }
+    
+    .time-digits {
+        font-size: 1.8rem;
+    }
+    
+    .timer-status {
+        font-size: 0.65rem;
+    }
+    
+    .todo-window {
+        width: 80vw;
+        left: 10vw;
+        right: 10vw;
+        max-height: 30vh;
+    }
+}
+
+/* Mobile Action Buttons */
+.mobile-actions {
+    position: relative;
+    display: none;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+    z-index: 1;
+}
+
+.mobile-btn {
+    width: 56px;
+    height: 56px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-family: 'JetBrains Mono', monospace;
+    touch-action: manipulation;
+    box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.mobile-btn:hover {
+    background: var(--accent-color);
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.mobile-btn:active {
+    transform: scale(0.95);
+}
+
+.mobile-btn.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.mobile-btn svg {
+    width: 20px;
+    height: 20px;
+    transition: all 0.2s ease;
+}
+
+.mobile-btn span {
+    display: none;
+}
+
+
+/* Specific button styling */
+#mobileComplete.enabled {
+    background: var(--accent-color);
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+}
+
+#mobileComplete.enabled:hover {
+    background: var(--timer-completed-color);
+    border-color: var(--timer-completed-glow);
+    color: white;
+}
+
+
+@media (max-width: 768px) {
+    .mobile-actions {
+        display: flex;
+    }
+    
+    .timer-container {
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-actions {
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+    }
+    
+    .mobile-btn {
+        width: 52px;
+        height: 52px;
+    }
+    
+    .mobile-btn svg {
+        width: 18px;
+        height: 18px;
     }
 }
