@@ -34,18 +34,12 @@
     <div class="todo-window" id="todoWindow">
         <div class="todo-header">
             <span class="todo-title">Tasks</span>
-            <button class="todo-close" id="todoClose">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 6h18l-1.5 14H4.5L3 6zm2.5 0V4.5A1.5 1.5 0 017 3h10a1.5 1.5 0 011.5 1.5V6m-5 7v4m-4-4v4"/>
-                    <path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M3 6h18l-1.5 14H4.5L3 6zm2.5 0V4.5A1.5 1.5 0 017 3h10a1.5 1.5 0 011.5 1.5V6m-5 7v4m-4-4v4"/>
-                </svg>
-            </button>
         </div>
         <div class="todo-input-wrapper">
             <input type="text" id="todoInput" placeholder="Add a task..." maxlength="100">
         </div>
-        <div class="todo-instruction">
-            <span>Tap on task to start</span>
+        <div class="todo-instruction" id="todoInstruction">
+            <span>Press enter to save task</span>
         </div>
         <div class="todo-list" id="todoList">
             <div class="no-todos">No tasks yet</div>

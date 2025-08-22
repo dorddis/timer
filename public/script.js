@@ -11,8 +11,8 @@ class MinimalisticTimer {
         this.clearHistory = document.getElementById('clearHistory');
         this.todoToggle = document.getElementById('todoToggle');
         this.todoWindow = document.getElementById('todoWindow');
-        this.todoClose = document.getElementById('todoClose');
         this.todoInput = document.getElementById('todoInput');
+        this.todoInstruction = document.getElementById('todoInstruction');
         this.todoList = document.getElementById('todoList');
         this.timerContainer = document.querySelector('.timer-container');
         this.taskInputContainer = document.querySelector('.task-input-container');
@@ -71,7 +71,6 @@ class MinimalisticTimer {
         
         // Todo window event listeners
         this.todoToggle.addEventListener('click', this.toggleTodoWindow.bind(this));
-        this.todoClose.addEventListener('click', this.closeTodoWindow.bind(this));
         this.todoInput.addEventListener('keydown', this.handleTodoInputKeydown.bind(this));
         
         // Event delegation for task list
@@ -891,6 +890,7 @@ class MinimalisticTimer {
         const todoId = parseInt(todoItem.dataset.todoId);
         
         if (e.target.classList.contains('todo-delete')) {
+            e.stopPropagation();
             this.deleteTodo(todoId);
         } else if (e.target.classList.contains('todo-text')) {
             this.startTodoAsCurrentTask(todoId);
@@ -918,19 +918,29 @@ class MinimalisticTimer {
     renderTodos() {
         if (this.todos.length === 0) {
             this.todoList.innerHTML = '<div class="no-todos">No tasks yet</div>';
-            return;
-        }
-        
-        this.todoList.innerHTML = this.todos.map(todo => `
-            <div class="todo-item" data-todo-id="${todo.id}">
-                <div class="todo-content">
-                    <div class="todo-text">${this.escapeHtml(todo.text)}</div>
-                    <div class="todo-actions">
-                        <button class="todo-delete">×</button>
+        } else {
+            this.todoList.innerHTML = this.todos.map(todo => `
+                <div class="todo-item" data-todo-id="${todo.id}">
+                    <div class="todo-content">
+                        <div class="todo-text">${this.escapeHtml(todo.text)}</div>
+                        <div class="todo-actions">
+                            <button class="todo-delete">×</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
+        }
+        
+        this.updateInstructionText();
+    }
+    
+    updateInstructionText() {
+        const instructionSpan = this.todoInstruction.querySelector('span');
+        if (this.todos.length === 0) {
+            instructionSpan.textContent = 'Press enter to save task';
+        } else {
+            instructionSpan.textContent = 'Tap on task to start';
+        }
     }
     
     escapeHtml(text) {
@@ -947,11 +957,12 @@ class MinimalisticTimer {
                 if (this.todos.length > 0) {
                     this.todoIdCounter = Math.max(...this.todos.map(t => t.id)) + 1;
                 }
-                this.renderTodos();
             }
+            this.renderTodos();
         } catch (error) {
             console.log('Could not load todos from localStorage');
             this.todos = [];
+            this.renderTodos();
         }
     }
     
