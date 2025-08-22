@@ -7,9 +7,14 @@
       "WebFetch(domain:epomaker.com)",
       "Bash(npm start)",
       "Bash(node:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\c\\Users\\sidro\\all-code\\active\\timer\\public",
+      "C:\\c\\Users\\sidro\\all-code\\active"
+    ]
   }
 }
