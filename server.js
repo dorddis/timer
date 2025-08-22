@@ -13,6 +13,13 @@ app.get('/', (req, res) => {
 
 app.get('/api/version', (req, res) => {
     try {
+        // Set no-cache headers to ensure version is always fresh
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+        
         const versionData = JSON.parse(fs.readFileSync('version.json', 'utf8'));
         res.json(versionData);
     } catch (error) {

@@ -33,7 +33,12 @@ class App {
 
     async loadVersion() {
         try {
-            const response = await fetch('/api/version');
+            const response = await fetch(`/api/version?t=${Date.now()}`, {
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            });
             const versionData = await response.json();
             const versionDisplay = document.getElementById('versionDisplay');
             if (versionDisplay && versionData.version) {
