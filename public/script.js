@@ -29,6 +29,9 @@ class MinimalisticTimer {
         this.hasDragged = false;
         this.sidebarOpen = false;
         this.alarmPlaying = false;
+        this.activeConfetti = [];
+        this.wheelTimeout = null;
+        this.globalWheelTimeout = null;
         
         this.init();
         this.loadState();
@@ -56,9 +59,12 @@ class MinimalisticTimer {
         this.clearHistory.addEventListener('click', this.clearTaskHistory.bind(this));
         this.taskInput.addEventListener('input', this.handleTaskInput.bind(this));
         
+        // Event delegation for task list
+        this.tasksList.addEventListener('click', this.handleTaskListClick.bind(this));
+        
         document.addEventListener('click', this.handleOutsideClick.bind(this));
         
-        window.addEventListener('beforeunload', this.saveState.bind(this));
+        window.addEventListener('beforeunload', this.cleanup.bind(this));
         
         this.timerDisplay.addEventListener('contextmenu', (e) => e.preventDefault());
     }
@@ -102,26 +108,20 @@ class MinimalisticTimer {
     }
     
     handleWheel(e) {
-        if (this.isRunning) return;
-        
         if (e.ctrlKey || e.metaKey || e.shiftKey) {
             return;
         }
         
         e.preventDefault();
-        const delta = e.deltaY > 0 ? -1 : 1;
-        this.totalSeconds = Math.max(0, Math.min(5999, this.totalSeconds + delta * 15));
         
-        this.remainingSeconds = this.totalSeconds;
-        this.actualElapsedSeconds = 0;
-        this.updateDisplay();
-        this.updateStatus();
-        this.saveState();
+        // Debounce wheel events
+        clearTimeout(this.wheelTimeout);
+        this.wheelTimeout = setTimeout(() => {
+            this.adjustTimer(e.deltaY > 0 ? -15 : 15);
+        }, 50);
     }
     
     handleGlobalWheel(e) {
-        if (this.isRunning) return;
-        
         if (e.ctrlKey || e.metaKey || e.shiftKey) {
             return;
         }
@@ -133,14 +133,12 @@ class MinimalisticTimer {
         
         if (e.target !== this.timerDisplay && !this.timerDisplay.contains(e.target)) {
             e.preventDefault();
-            const delta = e.deltaY > 0 ? -1 : 1;
             
-            this.totalSeconds = Math.max(0, Math.min(5999, this.totalSeconds + delta * 15));
-            this.remainingSeconds = this.totalSeconds;
-            this.actualElapsedSeconds = 0;
-            this.updateDisplay();
-            this.updateStatus();
-            this.saveState();
+            // Debounce global wheel events
+            clearTimeout(this.globalWheelTimeout);
+            this.globalWheelTimeout = setTimeout(() => {
+                this.adjustTimer(e.deltaY > 0 ? -15 : 15);
+            }, 50);
         }
     }
     
@@ -186,52 +184,63 @@ class MinimalisticTimer {
                 }
                 break;
             case 'ArrowUp':
-                if (!this.isRunning) {
-                    this.totalSeconds = Math.min(5999, this.totalSeconds + (e.shiftKey ? 60 : 1));
-                    this.remainingSeconds = this.totalSeconds;
-                    this.actualElapsedSeconds = 0;
-                    this.updateDisplay();
-                    this.updateStatus();
-                    this.saveState();
-                }
+                this.adjustTimer(e.shiftKey ? 60 : 1);
                 break;
             case 'ArrowDown':
-                if (!this.isRunning) {
-                    this.totalSeconds = Math.max(0, this.totalSeconds - (e.shiftKey ? 60 : 1));
-                    this.remainingSeconds = this.totalSeconds;
-                    this.actualElapsedSeconds = 0;
-                    this.updateDisplay();
-                    this.updateStatus();
-                    this.saveState();
-                }
+                this.adjustTimer(e.shiftKey ? -60 : -1);
                 break;
             case 'AudioVolumeUp':
             case 'VolumeUp':
-                if (document.hasFocus() && !this.isRunning) {
+                if (document.hasFocus()) {
                     e.preventDefault();
                     e.stopPropagation();
-                    this.totalSeconds = Math.min(5999, this.totalSeconds + 15);
-                    this.remainingSeconds = this.totalSeconds;
-                    this.actualElapsedSeconds = 0;
-                    this.updateDisplay();
-                    this.updateStatus();
-                    this.saveState();
+                    this.adjustTimer(15);
                 }
                 break;
             case 'AudioVolumeDown':
             case 'VolumeDown':
-                if (document.hasFocus() && !this.isRunning) {
+                if (document.hasFocus()) {
                     e.preventDefault();
                     e.stopPropagation();
-                    this.totalSeconds = Math.max(0, this.totalSeconds - 15);
-                    this.remainingSeconds = this.totalSeconds;
-                    this.actualElapsedSeconds = 0;
-                    this.updateDisplay();
-                    this.updateStatus();
-                    this.saveState();
+                    this.adjustTimer(-15);
                 }
                 break;
         }
+    }
+    
+    adjustTimer(deltaSeconds) {
+        // Validate input
+        if (typeof deltaSeconds !== 'number' || isNaN(deltaSeconds)) {
+            return;
+        }
+        
+        if (this.isRunning) {
+            // If timer is running, we need to adjust the current elapsed time
+            const currentElapsed = this.totalSeconds - this.remainingSeconds;
+            const newTotalSeconds = Math.max(0, Math.min(5999, this.totalSeconds + deltaSeconds));
+            
+            // Don't allow adjusting below current elapsed time when running
+            if (newTotalSeconds < currentElapsed) {
+                return;
+            }
+            
+            this.totalSeconds = newTotalSeconds;
+            this.remainingSeconds = this.totalSeconds - currentElapsed;
+            
+            // Update the start time to maintain consistency
+            const sessionElapsedMs = Date.now() - this.startTime;
+            const sessionElapsedSeconds = Math.floor(sessionElapsedMs / 1000);
+            this.actualElapsedSeconds = Math.max(0, currentElapsed - sessionElapsedSeconds);
+        } else {
+            // If timer is not running, simple adjustment
+            this.totalSeconds = Math.max(0, Math.min(5999, this.totalSeconds + deltaSeconds));
+            this.remainingSeconds = this.totalSeconds;
+            this.actualElapsedSeconds = 0;
+        }
+        
+        this.updateDisplay();
+        this.updateStatus();
+        this.saveState();
     }
     
     start() {
@@ -251,7 +260,7 @@ class MinimalisticTimer {
         
         this.interval = setInterval(() => {
             this.updateTimerFromTimestamp();
-        }, 100);
+        }, 1000);
         
         this.updateStatus();
         this.saveState();
@@ -423,9 +432,20 @@ class MinimalisticTimer {
             
             if (state.isRunning) {
                 const timePassed = Date.now() - state.timestamp;
+                const sessionSeconds = Math.floor(timePassed / 1000);
+                
                 this.pausedTime = state.pausedTime || 0;
                 this.startTime = Date.now() - timePassed;
-                this.actualElapsedSeconds = state.actualElapsedSeconds || (this.totalSeconds - this.remainingSeconds);
+                this.actualElapsedSeconds = state.actualElapsedSeconds || 0;
+                
+                // Calculate current remaining time accounting for time passed while app was closed
+                this.remainingSeconds = Math.max(-999, this.remainingSeconds - sessionSeconds);
+                
+                // If timer should have finished while we were away, handle it
+                if (this.remainingSeconds <= 0 && state.remainingSeconds > 0) {
+                    this.timerDisplay.classList.add('finished');
+                }
+                
                 this.start();
             } else {
                 this.isRunning = false;
@@ -470,18 +490,41 @@ class MinimalisticTimer {
         this.saveState();
     }
     
+    handleTaskListClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const deleteButton = e.target.closest('.task-delete');
+        const taskText = e.target.closest('.task-text');
+        
+        if (deleteButton) {
+            const taskIndex = parseInt(deleteButton.getAttribute('data-task-index'));
+            if (confirm('Delete this task from history?')) {
+                this.deleteTask(taskIndex);
+            }
+        } else if (taskText) {
+            const taskIndex = parseInt(taskText.getAttribute('data-task-index'));
+            this.editTaskName(taskText, taskIndex);
+        }
+    }
+    
     addCompletedTask() {
         if (!this.currentTaskName) return;
         
+        // Calculate actual elapsed time including current session and any overtime
+        const sessionElapsedMs = Date.now() - this.startTime;
+        const sessionElapsedSeconds = Math.floor(sessionElapsedMs / 1000);
+        const totalElapsedSeconds = this.actualElapsedSeconds + sessionElapsedSeconds;
+        
         const allocatedTime = this.formatDuration(this.totalSeconds);
-        const actualTime = this.formatDuration(this.actualElapsedSeconds);
-        const isOvertime = this.actualElapsedSeconds > this.totalSeconds;
+        const actualTime = this.formatDuration(totalElapsedSeconds);
+        const isOvertime = totalElapsedSeconds > this.totalSeconds;
         
         const task = {
             name: this.currentTaskName,
-            duration: isOvertime ? `${allocatedTime} - ${actualTime}` : allocatedTime,
+            duration: isOvertime ? `${allocatedTime} → ${actualTime}` : allocatedTime,
             allocatedSeconds: this.totalSeconds,
-            actualSeconds: this.actualElapsedSeconds,
+            actualSeconds: totalElapsedSeconds,
             completedAt: new Date().toLocaleString(),
             timestamp: Date.now()
         };
@@ -506,11 +549,15 @@ class MinimalisticTimer {
     loadTaskHistory() {
         const tasks = this.getTaskHistory();
         
+        // Clear existing content and event listeners
+        this.tasksList.innerHTML = '';
+        
         if (tasks.length === 0) {
             this.tasksList.innerHTML = '<div class="no-tasks">No completed tasks yet</div>';
             return;
         }
         
+        // Use event delegation instead of adding individual listeners
         this.tasksList.innerHTML = tasks.map((task, index) => `
             <div class="task-item">
                 <div class="task-content">
@@ -529,28 +576,6 @@ class MinimalisticTimer {
                 </div>
             </div>
         `).join('');
-        
-        // Add event listeners to delete buttons
-        const deleteButtons = this.tasksList.querySelectorAll('.task-delete');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const taskIndex = parseInt(e.currentTarget.getAttribute('data-task-index'));
-                this.deleteTask(taskIndex);
-            });
-        });
-        
-        // Add event listeners to task text elements for editing
-        const taskTexts = this.tasksList.querySelectorAll('.task-text');
-        taskTexts.forEach(textElement => {
-            textElement.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const taskIndex = parseInt(e.currentTarget.getAttribute('data-task-index'));
-                this.editTaskName(textElement, taskIndex);
-            });
-        });
     }
     
     editTaskName(textElement, taskIndex) {
@@ -564,6 +589,7 @@ class MinimalisticTimer {
         const input = document.createElement('input');
         input.type = 'text';
         input.value = currentText;
+        input.maxLength = 100;
         input.className = 'task-edit-input';
         input.style.cssText = `
             background: rgba(35, 35, 35, 0.9);
@@ -585,7 +611,7 @@ class MinimalisticTimer {
         
         const saveEdit = () => {
             const newText = input.value.trim();
-            if (newText && newText !== currentText) {
+            if (newText && newText !== currentText && newText.length <= 100) {
                 this.updateTaskName(taskIndex, newText);
             }
             input.remove();
@@ -690,6 +716,7 @@ class MinimalisticTimer {
     }
     
     showCelebrationEffect() {
+        this.clearActiveConfetti();
         this.createConfetti();
         
         document.body.style.background = 'radial-gradient(circle, rgba(50, 205, 50, 0.1) 0%, rgba(0, 0, 0, 1) 70%)';
@@ -707,6 +734,18 @@ class MinimalisticTimer {
                 this.createConfettiPiece(colors[Math.floor(Math.random() * colors.length)]);
             }, i * 10);
         }
+    }
+    
+    clearActiveConfetti() {
+        this.activeConfetti.forEach(confetti => {
+            if (confetti.element && confetti.element.parentNode) {
+                confetti.element.remove();
+            }
+            if (confetti.animationId) {
+                cancelAnimationFrame(confetti.animationId);
+            }
+        });
+        this.activeConfetti = [];
     }
     
     createConfettiPiece(color) {
@@ -734,6 +773,10 @@ class MinimalisticTimer {
         let currentRotation = rotation;
         let currentX = parseFloat(confetti.style.left);
         let currentY = -20;
+        let animationId = null;
+        
+        const confettiObj = { element: confetti, animationId: null };
+        this.activeConfetti.push(confettiObj);
         
         const animate = () => {
             currentY += yVelocity;
@@ -746,12 +789,39 @@ class MinimalisticTimer {
             
             if (currentY > window.innerHeight + 20 || currentX < -20 || currentX > window.innerWidth + 20) {
                 confetti.remove();
+                const index = this.activeConfetti.indexOf(confettiObj);
+                if (index > -1) {
+                    this.activeConfetti.splice(index, 1);
+                }
             } else {
-                requestAnimationFrame(animate);
+                animationId = requestAnimationFrame(animate);
+                confettiObj.animationId = animationId;
             }
         };
         
-        requestAnimationFrame(animate);
+        animationId = requestAnimationFrame(animate);
+        confettiObj.animationId = animationId;
+    }
+    
+    cleanup() {
+        // Save state before unload
+        this.saveState();
+        
+        // Clear timeouts
+        if (this.wheelTimeout) {
+            clearTimeout(this.wheelTimeout);
+        }
+        if (this.globalWheelTimeout) {
+            clearTimeout(this.globalWheelTimeout);
+        }
+        
+        // Clear timer interval
+        if (this.interval) {
+            clearInterval(this.interval);
+        }
+        
+        // Clear confetti animations
+        this.clearActiveConfetti();
     }
 }
 
