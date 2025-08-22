@@ -9,6 +9,11 @@ class MinimalisticTimer {
         this.sidebar = document.getElementById('sidebar');
         this.tasksList = document.getElementById('tasksList');
         this.clearHistory = document.getElementById('clearHistory');
+        this.todoToggle = document.getElementById('todoToggle');
+        this.todoWindow = document.getElementById('todoWindow');
+        this.todoClose = document.getElementById('todoClose');
+        this.todoInput = document.getElementById('todoInput');
+        this.todoList = document.getElementById('todoList');
         this.timerContainer = document.querySelector('.timer-container');
         this.taskInputContainer = document.querySelector('.task-input-container');
         this.controls = document.querySelector('.controls');
@@ -28,14 +33,18 @@ class MinimalisticTimer {
         this.dragStartTime = 0;
         this.hasDragged = false;
         this.sidebarOpen = false;
+        this.todoWindowOpen = false;
         this.alarmPlaying = false;
         this.activeConfetti = [];
         this.wheelTimeout = null;
         this.globalWheelTimeout = null;
+        this.todos = [];
+        this.todoIdCounter = 1;
         
         this.init();
         this.loadState();
         this.loadTaskHistory();
+        this.loadTodos();
         this.loadVersion();
     }
     
@@ -60,8 +69,16 @@ class MinimalisticTimer {
         this.clearHistory.addEventListener('click', this.clearTaskHistory.bind(this));
         this.taskInput.addEventListener('input', this.handleTaskInput.bind(this));
         
+        // Todo window event listeners
+        this.todoToggle.addEventListener('click', this.toggleTodoWindow.bind(this));
+        this.todoClose.addEventListener('click', this.closeTodoWindow.bind(this));
+        this.todoInput.addEventListener('keydown', this.handleTodoInputKeydown.bind(this));
+        
         // Event delegation for task list
         this.tasksList.addEventListener('click', this.handleTaskListClick.bind(this));
+        
+        // Event delegation for todo list
+        this.todoList.addEventListener('click', this.handleTodoListClick.bind(this));
         
         document.addEventListener('click', this.handleOutsideClick.bind(this));
         
@@ -127,8 +144,8 @@ class MinimalisticTimer {
             return;
         }
         
-        // Don't hijack scroll if we're over the sidebar
-        if (this.sidebar.contains(e.target)) {
+        // Don't hijack scroll if we're over the sidebar or todo window
+        if (this.sidebar.contains(e.target) || this.todoWindow.contains(e.target)) {
             return;
         }
         
@@ -161,6 +178,7 @@ class MinimalisticTimer {
     
     handleKeydown(e) {
         if (document.activeElement === this.taskInput || 
+            document.activeElement === this.todoInput ||
             document.activeElement.classList.contains('task-edit-input')) {
             return;
         }
@@ -476,6 +494,12 @@ class MinimalisticTimer {
             !this.sidebarToggle.contains(e.target)) {
             this.closeSidebar();
         }
+        
+        if (this.todoWindowOpen &&
+            !this.todoWindow.contains(e.target) &&
+            !this.todoToggle.contains(e.target)) {
+            this.closeTodoWindow();
+        }
     }
     
     closeSidebar() {
@@ -485,6 +509,12 @@ class MinimalisticTimer {
         this.timerContainer.classList.remove('sidebar-open');
         this.taskInputContainer.classList.remove('sidebar-open');
         this.controls.classList.remove('sidebar-open');
+    }
+    
+    closeTodoWindow() {
+        this.todoWindowOpen = false;
+        this.todoWindow.classList.remove('open');
+        this.todoToggle.classList.remove('open');
     }
     
     handleTaskInput() {
@@ -823,6 +853,114 @@ class MinimalisticTimer {
         
         // Clear confetti animations
         this.clearActiveConfetti();
+    }
+    
+    toggleTodoWindow() {
+        this.todoWindowOpen = !this.todoWindowOpen;
+        this.todoWindow.classList.toggle('open', this.todoWindowOpen);
+        this.todoToggle.classList.toggle('open', this.todoWindowOpen);
+    }
+    
+    addTodo() {
+        const text = this.todoInput.value.trim();
+        if (!text) return;
+        
+        const todo = {
+            id: this.todoIdCounter++,
+            text: text,
+            completed: false,
+            created: Date.now()
+        };
+        
+        this.todos.push(todo);
+        this.todoInput.value = '';
+        this.renderTodos();
+        this.saveTodos();
+    }
+    
+    handleTodoInputKeydown(e) {
+        if (e.code === 'Enter') {
+            this.addTodo();
+        }
+    }
+    
+    handleTodoListClick(e) {
+        const todoItem = e.target.closest('.todo-item');
+        if (!todoItem) return;
+        
+        const todoId = parseInt(todoItem.dataset.todoId);
+        
+        if (e.target.classList.contains('todo-delete')) {
+            this.deleteTodo(todoId);
+        } else if (e.target.classList.contains('todo-text')) {
+            this.startTodoAsCurrentTask(todoId);
+        }
+    }
+    
+    deleteTodo(id) {
+        this.todos = this.todos.filter(todo => todo.id !== id);
+        this.renderTodos();
+        this.saveTodos();
+    }
+    
+    startTodoAsCurrentTask(id) {
+        const todo = this.todos.find(t => t.id === id);
+        if (todo) {
+            this.taskInput.value = todo.text;
+            this.currentTaskName = todo.text;
+            this.deleteTodo(id);
+            if (this.todoWindowOpen) {
+                this.closeTodoWindow();
+            }
+        }
+    }
+    
+    renderTodos() {
+        if (this.todos.length === 0) {
+            this.todoList.innerHTML = '<div class="no-todos">No tasks yet</div>';
+            return;
+        }
+        
+        this.todoList.innerHTML = this.todos.map(todo => `
+            <div class="todo-item" data-todo-id="${todo.id}">
+                <div class="todo-content">
+                    <div class="todo-text">${this.escapeHtml(todo.text)}</div>
+                    <div class="todo-actions">
+                        <button class="todo-delete">×</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    loadTodos() {
+        try {
+            const saved = localStorage.getItem('timerTodos');
+            if (saved) {
+                this.todos = JSON.parse(saved);
+                if (this.todos.length > 0) {
+                    this.todoIdCounter = Math.max(...this.todos.map(t => t.id)) + 1;
+                }
+                this.renderTodos();
+            }
+        } catch (error) {
+            console.log('Could not load todos from localStorage');
+            this.todos = [];
+        }
+    }
+    
+    saveTodos() {
+        try {
+            localStorage.setItem('timerTodos', JSON.stringify(this.todos));
+        } catch (error) {
+            console.log('Could not save todos to localStorage');
+        }
     }
     
     async loadVersion() {
