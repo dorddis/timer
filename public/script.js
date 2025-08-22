@@ -19,6 +19,7 @@ class MinimalisticTimer {
         this.isPaused = false;
         this.interval = null;
         this.startTime = null;
+        this.pausedTime = 0;
         this.currentTaskName = '';
         this.actualElapsedSeconds = 0;
         
@@ -239,6 +240,7 @@ class MinimalisticTimer {
         this.isRunning = true;
         this.isPaused = false;
         this.startTime = Date.now();
+        this.pausedTime = 0;
         this.actualElapsedSeconds = this.totalSeconds - this.remainingSeconds;
         this.currentTaskName = this.taskInput.value.trim() || 'Untitled Task';
         this.timerDisplay.classList.add('running');
@@ -248,18 +250,8 @@ class MinimalisticTimer {
         }
         
         this.interval = setInterval(() => {
-            this.remainingSeconds--;
-            this.actualElapsedSeconds++;
-            this.updateDisplay();
-            this.updateStatus();
-            
-            if (this.remainingSeconds === 0) {
-                this.playAlarm();
-                this.timerDisplay.classList.add('finished');
-            }
-            
-            this.saveState();
-        }, 1000);
+            this.updateTimerFromTimestamp();
+        }, 100);
         
         this.updateStatus();
         this.saveState();
@@ -268,6 +260,7 @@ class MinimalisticTimer {
     pause() {
         this.isRunning = false;
         this.isPaused = true;
+        this.pausedTime += Date.now() - this.startTime;
         this.timerDisplay.classList.remove('running');
         
         if (this.interval) {
@@ -285,6 +278,7 @@ class MinimalisticTimer {
         this.totalSeconds = 0;
         this.remainingSeconds = 0;
         this.actualElapsedSeconds = 0;
+        this.pausedTime = 0;
         this.timerDisplay.classList.remove('running', 'finished', 'completed');
         
         if (this.interval) {
@@ -363,6 +357,26 @@ class MinimalisticTimer {
         playTone();
     }
     
+    updateTimerFromTimestamp() {
+        if (!this.isRunning) return;
+        
+        const currentTime = Date.now();
+        const sessionElapsedMs = currentTime - this.startTime;
+        const sessionElapsedSeconds = Math.floor(sessionElapsedMs / 1000);
+        
+        const newRemainingSeconds = this.totalSeconds - this.actualElapsedSeconds - sessionElapsedSeconds;
+        
+        if (this.remainingSeconds > 0 && newRemainingSeconds <= 0) {
+            this.playAlarm();
+            this.timerDisplay.classList.add('finished');
+        }
+        
+        this.remainingSeconds = newRemainingSeconds;
+        this.updateDisplay();
+        this.updateStatus();
+        this.saveState();
+    }
+    
     updateDisplay() {
         if (this.remainingSeconds >= 0) {
             const minutes = Math.floor(this.remainingSeconds / 60);
@@ -398,17 +412,19 @@ class MinimalisticTimer {
             if (!saved) return;
             
             const state = JSON.parse(saved);
-            const timePassed = Math.floor((Date.now() - state.timestamp) / 1000);
             
             this.totalSeconds = state.totalSeconds;
             this.remainingSeconds = state.remainingSeconds;
+            this.pausedTime = state.pausedTime || 0;
             
             if (state.currentTaskName) {
                 this.taskInput.value = state.currentTaskName;
             }
             
             if (state.isRunning) {
-                this.remainingSeconds = state.remainingSeconds - timePassed;
+                const timePassed = Date.now() - state.timestamp;
+                this.pausedTime = state.pausedTime || 0;
+                this.startTime = Date.now() - timePassed;
                 this.actualElapsedSeconds = state.actualElapsedSeconds || (this.totalSeconds - this.remainingSeconds);
                 this.start();
             } else {
@@ -636,6 +652,8 @@ class MinimalisticTimer {
             isPaused: this.isPaused,
             currentTaskName: this.taskInput.value,
             actualElapsedSeconds: this.actualElapsedSeconds,
+            pausedTime: this.pausedTime,
+            startTime: this.startTime,
             timestamp: Date.now()
         };
         localStorage.setItem('timerState', JSON.stringify(state));
