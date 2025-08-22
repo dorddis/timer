@@ -188,16 +188,25 @@ class UIManager {
     updateStatus() {
         if (window.app.timer.totalSeconds === 0) {
             this.timerStatus.textContent = 'Click and drag to set time';
+            this.timerDisplay.classList.remove('running', 'finished', 'completed');
         } else if (window.app.timer.isRunning && window.app.timer.remainingSeconds < 0) {
             this.timerStatus.textContent = 'Overtime - C to complete';
+            this.timerDisplay.classList.add('running', 'finished');
+            this.timerDisplay.classList.remove('completed');
         } else if (window.app.timer.isRunning) {
             this.timerStatus.textContent = 'Running... Click to pause';
+            this.timerDisplay.classList.add('running');
+            this.timerDisplay.classList.remove('finished', 'completed');
         } else if (window.app.timer.isPaused) {
             this.timerStatus.textContent = 'Paused - Click to resume';
+            this.timerDisplay.classList.remove('running', 'finished', 'completed');
         } else if (window.app.timer.remainingSeconds <= 0 && window.app.timer.totalSeconds > 0) {
             this.timerStatus.textContent = 'Time up! C to complete';
+            this.timerDisplay.classList.add('finished');
+            this.timerDisplay.classList.remove('running', 'completed');
         } else {
             this.timerStatus.textContent = 'Click to start timer';
+            this.timerDisplay.classList.remove('running', 'finished', 'completed');
         }
     }
 
@@ -222,6 +231,72 @@ class UIManager {
         this.currentTaskName = taskName;
     }
 
+    setCurrentTaskWithTypewriter(taskName) {
+        // Clear any existing typewriter animation
+        if (this.typewriterTimeout) {
+            clearTimeout(this.typewriterTimeout);
+            this.typewriterTimeout = null;
+        }
+        
+        this.currentTaskName = taskName;
+        
+        // Clear current input and remove any existing typewriter classes
+        this.taskInput.value = '';
+        this.taskInput.classList.remove('typewriter-active');
+        
+        // Blur the input to remove focus and prevent caret
+        this.taskInput.blur();
+        
+        // Add typewriter class for effect (but no cursor)
+        this.taskInput.classList.add('typewriter-active');
+        
+        // Disable the input during animation to prevent interaction
+        this.taskInput.disabled = true;
+        
+        let i = 0;
+        const typeChar = () => {
+            if (i < taskName.length) {
+                this.taskInput.value += taskName.charAt(i);
+                i++;
+                this.typewriterTimeout = setTimeout(typeChar, 80 + Math.random() * 60);
+            } else {
+                // After typing completes, just clean up - don't clear input
+                this.typewriterTimeout = setTimeout(() => {
+                    this.taskInput.classList.remove('typewriter-active');
+                    this.taskInput.disabled = false;
+                    this.typewriterTimeout = null;
+                }, 500);
+            }
+        };
+        
+        // Start typing after a longer delay to create gap with notification
+        this.typewriterTimeout = setTimeout(typeChar, 1000);
+    }
+
+    showTaskAutoStarted(taskName) {
+        // Create and show a subtle notification
+        const notification = document.createElement('div');
+        notification.className = 'task-notification';
+        notification.textContent = `Next task: ${taskName}`;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            notification.classList.add('show');
+        });
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 3000);
+    }
+
     toggleSidebar() {
         this.sidebarOpen = !this.sidebarOpen;
         this.sidebar.classList.toggle('open');
@@ -229,6 +304,15 @@ class UIManager {
         this.timerContainer.classList.toggle('sidebar-open');
         this.taskInputContainer.classList.toggle('sidebar-open');
         this.controls.classList.toggle('sidebar-open');
+        
+        // Show/hide theme button based on sidebar state
+        if (window.app.settings) {
+            window.app.settings.updateVisibility(this.sidebarOpen);
+        }
+        
+        if (this.sidebarOpen) {
+            this.renderTaskHistory();
+        }
     }
 
     closeSidebar() {
@@ -238,12 +322,26 @@ class UIManager {
         this.timerContainer.classList.remove('sidebar-open');
         this.taskInputContainer.classList.remove('sidebar-open');
         this.controls.classList.remove('sidebar-open');
+        
+        // Hide theme button when sidebar closes
+        if (window.app.settings) {
+            window.app.settings.updateVisibility(false);
+        }
     }
 
     handleOutsideClick(e) {
+        // Don't handle outside clicks if a modal is open
+        if (document.getElementById('confirmModal')) {
+            return;
+        }
+        
+        // Check if click is on theme button or theme panel
+        const isThemeButtonClick = e.target.closest('#settingsToggle') || e.target.closest('#settingsPanel');
+        
         if (this.sidebarOpen && 
             !this.sidebar.contains(e.target) && 
-            !this.sidebarToggle.contains(e.target)) {
+            !this.sidebarToggle.contains(e.target) &&
+            !isThemeButtonClick) {
             this.closeSidebar();
         }
         
@@ -263,9 +361,14 @@ class UIManager {
         
         if (deleteButton) {
             const taskIndex = parseInt(deleteButton.getAttribute('data-task-index'));
-            if (confirm('Delete this task from history?')) {
-                this.deleteTask(taskIndex);
-            }
+            const taskItem = deleteButton.closest('.task-item');
+            this.showConfirmModal(
+                'Delete Task',
+                'Delete this task from history?',
+                () => {
+                    this.deleteTaskWithAnimation(taskIndex, taskItem);
+                }
+            );
         } else if (taskText) {
             const taskIndex = parseInt(taskText.getAttribute('data-task-index'));
             this.editTaskName(taskText, taskIndex);
@@ -273,14 +376,70 @@ class UIManager {
     }
 
     clearTaskHistory() {
+        // Prevent multiple clear operations
+        if (this.clearingInProgress) {
+            return;
+        }
+        
         this.showConfirmModal(
             'Clear Task History',
             'Are you sure you want to clear all task history? This action cannot be undone.',
             () => {
-                window.app.storage.clearTaskHistory();
-                this.renderTaskHistory();
+                this.clearingInProgress = true;
+                this.clearTasksWithAnimation();
+                
+                // Reset flag after operation completes
+                setTimeout(() => {
+                    this.clearingInProgress = false;
+                }, 5000); // Allow enough time for animations to complete
             }
         );
+    }
+
+    clearTasksWithAnimation() {
+        const taskItems = this.tasksList.querySelectorAll('.task-item');
+        if (taskItems.length === 0) return;
+
+        // Check if any items are already being animated to prevent conflicts
+        const hasActiveAnimations = Array.from(taskItems).some(item => 
+            item.dataset.deleting === 'true' || 
+            item.classList.contains('deleting') || 
+            item.classList.contains('clearing')
+        );
+        
+        if (hasActiveAnimations) {
+            // If animations are in progress, fall back to immediate clear
+            window.app.storage.clearTaskHistory();
+            this.renderTaskHistory();
+            setTimeout(() => {
+                this.closeSidebar();
+            }, 500);
+            return;
+        }
+
+        // Mark all items as being cleared to prevent individual deletions during bulk clear
+        taskItems.forEach(item => {
+            item.dataset.clearing = 'true';
+        });
+
+        // Add clearing animation to all items with staggered delay
+        taskItems.forEach((item, index) => {
+            setTimeout(() => {
+                item.classList.add('clearing');
+            }, index * 50);
+        });
+
+        // Clear storage and re-render after animations complete
+        const animationDuration = taskItems.length * 50 + 400; // Match CSS animation duration
+        setTimeout(() => {
+            window.app.storage.clearTaskHistory();
+            this.renderTaskHistory();
+            
+            // Close sidebar after animation and a brief pause for user to see result
+            setTimeout(() => {
+                this.closeSidebar();
+            }, 800);
+        }, animationDuration);
     }
 
     showConfirmModal(title, message, onConfirm) {
@@ -385,6 +544,27 @@ class UIManager {
         return div.innerHTML;
     }
 
+    deleteTaskWithAnimation(index, taskItem) {
+        // Prevent multiple deletions on the same item or during bulk clear
+        if (taskItem.classList.contains('deleting') || 
+            taskItem.dataset.deleting === 'true' ||
+            taskItem.dataset.clearing === 'true' ||
+            taskItem.classList.contains('clearing')) {
+            return;
+        }
+        
+        // Mark as being deleted to prevent duplicate calls
+        taskItem.dataset.deleting = 'true';
+        
+        // Add deleting class - CSS handles all the animation
+        taskItem.classList.add('deleting');
+        
+        // Clean up and re-render after animation completes
+        setTimeout(() => {
+            this.deleteTask(index);
+        }, 300); // Match CSS transition duration
+    }
+
     deleteTask(index) {
         let tasks = window.app.storage.getTaskHistory();
         tasks.splice(index, 1);
@@ -458,6 +638,80 @@ class UIManager {
             localStorage.setItem('taskHistory', JSON.stringify(tasks));
             this.renderTaskHistory();
         }
+    }
+
+    clearTaskInputWithAnimation() {
+        // Clear any existing animation first
+        if (this.typewriterTimeout) {
+            clearTimeout(this.typewriterTimeout);
+            this.typewriterTimeout = null;
+        }
+        
+        // Make sure input is enabled
+        this.taskInput.disabled = false;
+        this.taskInput.classList.remove('typewriter-active');
+        
+        // If input is already empty, just restore placeholder with animation
+        if (!this.taskInput.value.trim()) {
+            this.animatePlaceholder();
+            return;
+        }
+        
+        // Animate clearing the task input
+        let currentText = this.taskInput.value;
+        let i = currentText.length;
+        
+        const clearChar = () => {
+            if (i > 0) {
+                this.taskInput.value = currentText.substring(0, i - 1);
+                i--;
+                this.typewriterTimeout = setTimeout(clearChar, 30);
+            } else {
+                // Text cleared - now animate the placeholder
+                this.currentTaskName = '';
+                this.typewriterTimeout = null;
+                
+                // Save the cleared state
+                window.app.storage.saveState();
+                
+                // Start placeholder animation after a brief pause
+                setTimeout(() => {
+                    this.animatePlaceholder();
+                }, 300);
+            }
+        };
+        
+        // Start clearing immediately
+        clearChar();
+    }
+
+    animatePlaceholder() {
+        const placeholderText = 'What are you working on?';
+        
+        // Clear placeholder and set up for animation
+        this.taskInput.placeholder = '';
+        this.taskInput.value = '';
+        this.taskInput.disabled = true;
+        this.taskInput.classList.add('typewriter-active');
+        
+        let i = 0;
+        const typePlaceholderChar = () => {
+            if (i < placeholderText.length) {
+                this.taskInput.placeholder += placeholderText.charAt(i);
+                i++;
+                this.typewriterTimeout = setTimeout(typePlaceholderChar, 60 + Math.random() * 40);
+            } else {
+                // Animation complete - restore normal state
+                this.typewriterTimeout = setTimeout(() => {
+                    this.taskInput.classList.remove('typewriter-active');
+                    this.taskInput.disabled = false;
+                    this.typewriterTimeout = null;
+                }, 500);
+            }
+        };
+        
+        // Start typing placeholder after a short delay
+        this.typewriterTimeout = setTimeout(typePlaceholderChar, 200);
     }
 
     clearActiveConfetti() {

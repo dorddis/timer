@@ -221,6 +221,10 @@ class TodoManager {
         }
     }
 
+    getNextTodo() {
+        return this.todos.length > 0 ? this.todos[0] : null;
+    }
+
     handleOutsideClick(e) {
         if (this.todoWindowOpen &&
             !this.todoWindow.contains(e.target) &&

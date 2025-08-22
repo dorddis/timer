@@ -6,7 +6,7 @@ class SettingsPanel {
     }
 
     createSettingsPanel() {
-        // Create settings toggle button
+        // Create settings toggle button (hidden by default)
         const settingsToggle = document.createElement('div');
         settingsToggle.className = 'settings-toggle';
         settingsToggle.id = 'settingsToggle';
@@ -23,15 +23,12 @@ class SettingsPanel {
         settingsPanel.id = 'settingsPanel';
         settingsPanel.innerHTML = `
             <div class="settings-header">
-                <span class="settings-title">Settings</span>
+                <span class="settings-title">Theme</span>
                 <button class="settings-close" id="settingsClose">×</button>
             </div>
             <div class="settings-content">
-                <div class="setting-group">
-                    <label class="setting-label">Theme</label>
-                    <div class="theme-options" id="themeOptions">
-                        <!-- Theme options will be populated by JavaScript -->
-                    </div>
+                <div class="theme-options" id="themeOptions">
+                    <!-- Theme options will be populated by JavaScript -->
                 </div>
             </div>
         `;
@@ -59,6 +56,16 @@ class SettingsPanel {
                 this.closeSettings();
             }
         });
+    }
+
+    // Show/hide the theme button based on sidebar state
+    updateVisibility(sidebarOpen) {
+        if (sidebarOpen) {
+            this.settingsToggle.classList.add('visible');
+        } else {
+            this.settingsToggle.classList.remove('visible');
+            this.closeSettings(); // Close theme panel if sidebar closes
+        }
     }
 
     populateThemeOptions() {

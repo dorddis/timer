@@ -97,6 +97,13 @@ class TimerCore {
         window.app.ui.updateDisplay();
         window.app.ui.updateStatus();
         window.app.storage.saveState();
+        
+        // Clear task input if no todos remain
+        if (window.app.todo.todos.length === 0) {
+            setTimeout(() => {
+                window.app.ui.clearTaskInputWithAnimation();
+            }, 1000);
+        }
     }
 
     finish() {
@@ -128,7 +135,24 @@ class TimerCore {
         
         setTimeout(() => {
             this.reset();
+            this.startNextTodoTask();
         }, 3000);
+    }
+
+    startNextTodoTask() {
+        const nextTodo = window.app.todo.getNextTodo();
+        if (nextTodo) {
+            window.app.ui.setCurrentTaskWithTypewriter(nextTodo.text);
+            window.app.todo.deleteTodoSilent(nextTodo.id);
+            
+            // Show a subtle notification
+            window.app.ui.showTaskAutoStarted(nextTodo.text);
+        } else {
+            // No more todos - clear the input after a delay
+            setTimeout(() => {
+                window.app.ui.clearTaskInputWithAnimation();
+            }, 2000);
+        }
     }
 
     playAlarm() {
@@ -263,11 +287,6 @@ class TimerCore {
     showCelebrationEffect() {
         window.app.ui.clearActiveConfetti();
         this.createConfetti();
-        
-        document.body.style.background = 'radial-gradient(circle, rgba(50, 205, 50, 0.1) 0%, rgba(0, 0, 0, 1) 70%)';
-        setTimeout(() => {
-            document.body.style.background = '';
-        }, 2000);
     }
 
     createConfetti() {
