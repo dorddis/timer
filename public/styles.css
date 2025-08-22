@@ -264,7 +264,7 @@ body {
         top: auto;
         left: auto;
         transform: none;
-        margin-top: 1.5rem;
+        margin-top: 2.5rem;
         margin-bottom: 2rem;
     }
     
@@ -356,8 +356,8 @@ body {
 
 .sidebar-toggle {
     position: fixed;
-    top: 2rem;
-    right: 1rem;
+    top: 1rem;
+    right: 0.5rem;
     color: var(--text-muted);
     cursor: pointer;
     z-index: 30;
@@ -847,8 +847,8 @@ body {
     }
     
     .sidebar-toggle {
-        right: 1rem;
-        top: 1.5rem;
+        right: 0.5rem;
+        top: 1rem;
     }
     
     .todo-window {
@@ -1355,7 +1355,7 @@ body {
     }
     
     .task-input-container {
-        margin-top: 1rem;
+        margin-top: 1.5rem;
         margin-bottom: 1rem;
     }
     

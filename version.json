@@ -1,5 +1,5 @@
 {
-  "version": "2.1.0",
+  "version": "2.1.1",
   "developmentStats": {
     "startDate": "2025-08-21 21:58:51",
     "totalCommits": 6,
@@ -8,6 +8,18 @@
     "coreFiles": 10
   },
   "changelog": [
+    {
+      "version": "2.1.1",
+      "date": "2025-08-22",
+      "changes": [
+        "Enhanced mobile keyboard support with Enter key functionality",
+        "Added Enter key handling for task input with automatic blur",
+        "Updated input placeholders to inform users about Enter key usage",
+        "Improved mobile layout spacing - moved task input lower for better positioning",
+        "Repositioned sidebar toggle button higher and more to the right for better accessibility",
+        "Enhanced user experience with clearer input instructions"
+      ]
+    },
     {
       "version": "2.1.0",
       "date": "2025-08-22",

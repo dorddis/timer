@@ -50,6 +50,7 @@ class UIManager {
         this.mobileReset.addEventListener('click', this.handleMobileReset.bind(this));
         this.mobileComplete.addEventListener('click', this.handleMobileComplete.bind(this));
         this.taskInput.addEventListener('input', this.handleTaskInput.bind(this));
+        this.taskInput.addEventListener('keydown', this.handleTaskInputKeydown.bind(this));
         
         this.tasksList.addEventListener('click', this.handleTaskListClick.bind(this));
         document.addEventListener('click', this.handleOutsideClick.bind(this));
@@ -506,6 +507,13 @@ class UIManager {
 
     handleTaskInput() {
         window.app.storage.saveState();
+    }
+
+    handleTaskInputKeydown(e) {
+        if (e.code === 'Enter') {
+            e.preventDefault();
+            this.taskInput.blur();
+        }
     }
 
     handleTaskListClick(e) {

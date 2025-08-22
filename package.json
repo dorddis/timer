@@ -1,6 +1,6 @@
 {
   "name": "minimalistic-timer",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "A minimalistic digital timer with mouse/scroll controls",
   "main": "server.js",
   "scripts": {
