@@ -36,6 +36,7 @@ class MinimalisticTimer {
         this.init();
         this.loadState();
         this.loadTaskHistory();
+        this.loadVersion();
     }
     
     init() {
@@ -822,6 +823,19 @@ class MinimalisticTimer {
         
         // Clear confetti animations
         this.clearActiveConfetti();
+    }
+    
+    async loadVersion() {
+        try {
+            const response = await fetch('/api/version');
+            const versionData = await response.json();
+            const versionDisplay = document.getElementById('versionDisplay');
+            if (versionDisplay && versionData.version) {
+                versionDisplay.textContent = `v${versionData.version}`;
+            }
+        } catch (error) {
+            console.log('Could not load version data');
+        }
     }
 }
 

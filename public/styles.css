@@ -175,6 +175,18 @@ body {
     }
 }
 
+.version-display {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    font-size: 0.7rem;
+    color: rgba(232, 232, 232, 0.15);
+    font-weight: 400;
+    z-index: 5;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
 .task-input-container {
     position: fixed;
     top: 2rem;

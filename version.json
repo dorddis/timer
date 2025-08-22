@@ -1,0 +1,88 @@
+{
+  "version": "1.2.0",
+  "developmentStats": {
+    "startDate": "2025-08-21 21:58:51",
+    "totalCommits": 6,
+    "developmentTime": "~15 hours",
+    "totalChanges": "456 insertions, 145 deletions",
+    "coreFiles": 10
+  },
+  "changelog": [
+    {
+      "version": "1.2.0",
+      "date": "2025-08-22",
+      "changes": [
+        "Added version counter display with dynamic loading",
+        "Implemented comprehensive version tracking system with API endpoint",
+        "Added git analysis script for development timeline tracking",
+        "Enhanced project documentation with development statistics"
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "date": "2025-08-22 12:42:05",
+      "commit": "0ed2043d",
+      "changes": [
+        "Major refactor: Fixed restart time mid countdown bug",
+        "Improved timer state management and persistence",
+        "Enhanced error handling and edge cases"
+      ]
+    },
+    {
+      "version": "1.0.3",
+      "date": "2025-08-22 08:32:06",
+      "commit": "caea1152",
+      "changes": [
+        "Fixed out of focus behavior for better user experience",
+        "Improved timer accuracy when window loses focus"
+      ]
+    },
+    {
+      "version": "1.0.2",
+      "date": "2025-08-21 22:35:34",
+      "commit": "aff2d880",
+      "changes": [
+        "Final UI polish and styling improvements",
+        "Enhanced responsiveness and visual feedback",
+        "Code cleanup and optimization"
+      ]
+    },
+    {
+      "version": "1.0.1",
+      "date": "2025-08-21 22:21:41",
+      "commit": "dc464b27",
+      "changes": [
+        "Major feature: Added negative timer support",
+        "Enhanced time tracking accuracy with actual elapsed time",
+        "Added comprehensive README documentation",
+        "Improved task completion tracking and analytics"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2025-08-21 22:07:51",
+      "commit": "ab895211",
+      "changes": [
+        "Added delete button functionality for task history",
+        "Improved task management with individual task deletion",
+        "Enhanced sidebar usability"
+      ]
+    },
+    {
+      "version": "0.9.0",
+      "date": "2025-08-21 21:58:51",
+      "commit": "7324fd81",
+      "changes": [
+        "Initial release with full-featured minimalistic timer",
+        "Core timer functionality with drag controls",
+        "Task input and history tracking system",
+        "Sidebar for completed tasks with time tracking",
+        "Minimalistic design with JetBrains Mono typography",
+        "Express.js backend server setup",
+        "Responsive design for mobile and desktop",
+        "Audio feedback and visual celebrations",
+        "Local storage for state persistence"
+      ]
+    }
+  ]
+}

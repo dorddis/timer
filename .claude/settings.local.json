@@ -5,7 +5,9 @@
       "Bash(npm install)",
       "WebSearch",
       "WebFetch(domain:epomaker.com)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(node:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
